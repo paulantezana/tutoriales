@@ -1,0 +1,223 @@
+1
+00:00:00,000 --> 00:00:04,500
+Hola a todos. Hoy vamos a crear nuestro propio asistente de inteligencia artificial en Python.
+
+2
+00:00:04,500 --> 00:00:09,000
+Usaremos GptLuna, LangChain, Qdrant, Ollama y PostgreSQL.
+
+3
+00:00:09,000 --> 00:00:14,000
+Vamos a construir un chat que responde usando nuestros propios documentos. A esto se le llama RAG.
+
+4
+00:00:14,000 --> 00:00:19,000
+GptLuna será el cerebro, Ollama generará los embeddings y Qdrant guardará los vectores.
+
+5
+00:00:19,000 --> 00:00:24,000
+PostgreSQL recordará cada conversación, y LangChain unirá todas las piezas.
+
+6
+00:00:24,000 --> 00:00:27,800
+Primero, ingest.py lee los documentos y los divide en fragmentos.
+
+7
+00:00:27,800 --> 00:00:31,600
+Ollama convierte cada fragmento en un vector, y los guardamos en Qdrant.
+
+8
+00:00:31,600 --> 00:00:35,400
+Luego, cuando el usuario pregunta, app.py busca el contexto más parecido en Qdrant...
+
+9
+00:00:35,400 --> 00:00:39,200
+...y lee el historial del hilo desde PostgreSQL.
+
+10
+00:00:39,200 --> 00:00:43,000
+Con todo eso arma el prompt y se lo envía a GptLuna, que genera la respuesta.
+
+11
+00:00:43,000 --> 00:00:51,000
+Solo necesitas Python 3.10 o superior, Docker y una API key de GptLuna.
+
+12
+00:00:51,000 --> 00:00:55,256
+Paso uno: levantamos los servicios con Docker. Creamos el archivo docker-compose.yml.
+
+13
+00:00:55,256 --> 00:00:59,512
+Qdrant, nuestra base de datos vectorial, en el puerto 6333.
+
+14
+00:00:59,512 --> 00:01:03,769
+PostgreSQL en el puerto 5432, con usuario, contraseña y la base de datos 'asistente'.
+
+15
+00:01:03,769 --> 00:01:08,025
+Y Ollama en el puerto 11434. Cada servicio tiene su volumen para no perder los datos.
+
+16
+00:01:08,025 --> 00:01:13,905
+Levantamos todo con docker compose up -d.
+
+17
+00:01:13,905 --> 00:01:19,784
+Y descargamos el modelo de embeddings nomic-embed-text dentro de Ollama.
+
+18
+00:01:19,784 --> 00:01:24,384
+Paso dos: preparamos Python. Estas son las librerías que vamos a usar.
+
+19
+00:01:24,384 --> 00:01:28,984
+Las integraciones de LangChain para OpenAI, Ollama, Qdrant y Postgres, más psycopg y python-dotenv.
+
+20
+00:01:28,984 --> 00:01:40,639
+Creamos un entorno virtual, lo activamos e instalamos las dependencias.
+
+21
+00:01:40,639 --> 00:01:43,920
+Ahora creamos el archivo .env con la configuración.
+
+22
+00:01:43,920 --> 00:01:47,201
+GptLuna expone una API compatible con OpenAI: solo necesitamos la URL base, la API key y el modelo.
+
+23
+00:01:47,201 --> 00:01:50,482
+Revisa en el panel de GptLuna la URL y el nombre del modelo exactos de tu cuenta.
+
+24
+00:01:50,482 --> 00:01:53,764
+También las URLs de Ollama, Qdrant y PostgreSQL que levantamos con Docker.
+
+25
+00:01:53,764 --> 00:01:58,241
+Como ejemplo, usaremos un documento sobre una cafetería ficticia: Luna Café.
+
+26
+00:01:58,241 --> 00:02:02,719
+Aquí puedes poner tus propios archivos: manuales, preguntas frecuentes, políticas...
+
+27
+00:02:02,719 --> 00:02:07,535
+Paso tres: el script de ingesta, ingest.py.
+
+28
+00:02:07,535 --> 00:02:12,351
+Leemos todos los archivos .txt de la carpeta docs y los convertimos en documentos de LangChain.
+
+29
+00:02:12,351 --> 00:02:17,167
+Los dividimos en fragmentos de 500 caracteres, con un pequeño solapamiento.
+
+30
+00:02:17,167 --> 00:02:21,983
+Creamos el generador de embeddings con Ollama, usando el modelo nomic-embed-text.
+
+31
+00:02:21,983 --> 00:02:26,799
+Y con from_documents guardamos todos los fragmentos en una colección de Qdrant.
+
+32
+00:02:26,799 --> 00:02:30,613
+Lo ejecutamos... y nuestros documentos ya están en Qdrant.
+
+33
+00:02:30,613 --> 00:02:34,426
+Puedes revisarlos en el panel web de Qdrant, en localhost:6333/dashboard.
+
+34
+00:02:34,426 --> 00:02:44,398
+Paso cuatro: el asistente, app.py. Primero importamos LangChain y sus integraciones.
+
+35
+00:02:44,398 --> 00:02:49,010
+Configuramos GptLuna con ChatOpenAI. El truco está en cambiar la base_url.
+
+36
+00:02:49,010 --> 00:02:53,623
+Así funciona con cualquier API compatible con OpenAI. Una temperatura baja da respuestas más precisas.
+
+37
+00:02:53,623 --> 00:02:59,790
+Nos conectamos a la colección que ya existe en Qdrant, con los mismos embeddings de Ollama.
+
+38
+00:02:59,790 --> 00:03:05,956
+El retriever devolverá los 3 fragmentos más parecidos a cada pregunta.
+
+39
+00:03:05,956 --> 00:03:11,369
+Ahora la memoria. Nos conectamos a PostgreSQL y creamos la tabla chat_history.
+
+40
+00:03:11,369 --> 00:03:16,781
+La función obtener_historial devuelve los mensajes de un hilo según su session_id.
+
+41
+00:03:16,781 --> 00:03:21,226
+El prompt tiene tres partes: las instrucciones con el contexto, el historial y la pregunta.
+
+42
+00:03:21,226 --> 00:03:25,670
+buscar_contexto consulta Qdrant y une el texto de los fragmentos encontrados.
+
+43
+00:03:25,670 --> 00:03:30,115
+La cadena: agrega el contexto, arma el prompt, llama a GptLuna y devuelve texto.
+
+44
+00:03:30,115 --> 00:03:34,559
+RunnableWithMessageHistory lee y guarda automáticamente cada mensaje en PostgreSQL.
+
+45
+00:03:34,559 --> 00:03:41,509
+Por último, un bucle de chat. Si no escribimos un ID de hilo, se crea uno nuevo.
+
+46
+00:03:41,509 --> 00:03:48,459
+Cada pregunta se envía con su session_id, así cada hilo tiene su propia memoria.
+
+47
+00:03:48,459 --> 00:03:54,357
+¡Ahora sí, a probar! Ejecutamos python app.py y dejamos que cree un hilo nuevo.
+
+48
+00:03:54,357 --> 00:04:00,255
+Preguntamos por el producto estrella: responde con la información de nuestro documento.
+
+49
+00:04:00,255 --> 00:04:06,153
+Las preguntas de seguimiento funcionan porque, en cada mensaje, el asistente recibe el historial del hilo.
+
+50
+00:04:06,153 --> 00:04:12,051
+Y toda la información sale de Qdrant, no de lo que el modelo 'cree' saber.
+
+51
+00:04:12,051 --> 00:04:19,597
+Si cerramos el programa y lo abrimos con el mismo ID de hilo...
+
+52
+00:04:19,597 --> 00:04:27,144
+...el asistente recuerda toda la conversación, porque está guardada en PostgreSQL.
+
+53
+00:04:27,144 --> 00:04:34,690
+Podemos comprobarlo consultando directamente la tabla chat_history.
+
+54
+00:04:34,690 --> 00:04:41,690
+¡Y listo! Ya tienes un asistente con RAG y memoria persistente, todo en menos de 100 líneas.
+
+55
+00:04:41,690 --> 00:04:48,690
+Como siguiente paso puedes cargar PDFs, crear una interfaz web con Streamlit o FastAPI, o mostrar las respuestas en streaming.
+
+56
+00:04:48,690 --> 00:04:56,690
+Si te sirvió, dale like, suscríbete y déjame en los comentarios qué quieres que construyamos después. ¡Nos vemos!
