@@ -2,3 +2,6 @@ video/preview/
 .env
 __pycache__/
 video/_partes/
+video/modelos/
+video/_voz/
+video/narracion.wav

@@ -5,13 +5,15 @@ Simula a una persona programando en Visual Studio Code (explorador de archivos,
 pestañas, autocompletado, terminal integrada, mouse, atajos de teclado) y
 explica cada bloque de código para principiantes.
 
-Uso:
-    pip install pillow pygments
-    python render.py              # tutorial.mp4 + subtitulos.srt + guion.md
-    python render.py --preview    # solo PNGs de muestra en video/preview/
+La narración se genera con la voz neuronal Kokoro (sin internet, en tu PC).
 
-Requiere ffmpeg. El código se lee de ../codigo, así que el video siempre
-coincide con el proyecto.
+Uso:
+    pip install pillow pygments kokoro-onnx soundfile
+    python render.py              # tutorial.mp4 + narracion.wav + subtitulos.srt + guion.md
+    python render.py --preview 15 # solo PNGs de muestra en video/preview/
+
+Requiere ffmpeg y los archivos del modelo Kokoro en video/modelos/ (ver README).
+El código se lee de ../codigo, así que el video siempre coincide con el proyecto.
 """
 import copy
 import math
@@ -40,6 +42,13 @@ CLASE = "Tu primer asistente con RAG y memoria"
 MARCA = (0, 122, 204)        # color principal
 MARCA2 = (255, 196, 70)      # color de acento
 FONDO_SLIDE = (12, 16, 27)
+
+# ============================================================== VOZ
+VOZ = "em_alex"          # voces en español de Kokoro: em_alex, ef_dora, em_santa
+VELOCIDAD = 1.0          # 1.1 = un poco más rápido
+NARRACION = True         # False = video sin voz (solo subtítulos)
+TECLADO = True           # sonido suave de teclado y clics del mouse
+PAUSA_ENTRE_FRASES = 0.45
 
 # ============================================================== FUENTES
 INTER = "/usr/share/fonts/opentype/inter/"
@@ -107,6 +116,15 @@ GRIS = (140, 140, 140)
 BLANCO = (229, 229, 229)
 CIAN = (41, 184, 219)
 ROJO = (241, 76, 76)
+
+
+DUR_VOZ = {}  # frase -> segundos de audio generado
+
+
+def duracion_frase(texto):
+    if texto in DUR_VOZ:
+        return DUR_VOZ[texto] + PAUSA_ENTRE_FRASES
+    return max(2.4, len(texto) / 14.0)
 
 
 def ease(x):
@@ -296,6 +314,7 @@ class Director:
         self.log = []          # (inicio, fin, texto, capitulo)
         self.capitulos = []
         self.tecla_hasta = -1
+        self.sonidos = []      # (segundo, "tecla" | "clic")
 
     # ---------- tiempo
     @property
@@ -329,9 +348,9 @@ class Director:
         self.hold()
         if self.log and self.log[-1][1] is None:
             self.log[-1][1] = self.t
-        lectura = max(2.4, len(texto) / 14.0)
+        lectura = duracion_frase(texto)
         self.say_hasta = self.t + lectura
-        self.sub_fin = self.t + lectura + 2.0
+        self.sub_fin = self.t + lectura + 1.2
         self.log.append([self.t, None, texto, self.s.capitulo])
         self.set(subtitulo=texto)
         if esperar:
@@ -354,7 +373,7 @@ class Director:
             if e[1] is None:
                 e[1] = self.t
         for i, e in enumerate(self.log):
-            fin_lectura = e[0] + max(2.4, len(e[2]) / 14.0) + 2.0
+            fin_lectura = e[0] + duracion_frase(e[2]) + 1.2
             e[1] = min(e[1], fin_lectura)
 
     # ---------- mouse y teclado
@@ -372,10 +391,12 @@ class Director:
         if x is not None:
             self.mover(x, y)
         self.wait(0.08)
+        self.sonidos.append((self.t, "clic"))
         self.set(click=1.0)
         self.wait(0.25)
 
     def atajo(self, texto, dur=1.3):
+        self.sonidos.append((self.t, "tecla"))
         self.set(tecla=texto)
         self.tecla_hasta = len(self.frames) + round(dur * FPS)
 
@@ -403,6 +424,7 @@ class Director:
             self.set(scroll=sc)
 
     def _insertar(self, ch):
+        self.sonidos.append((self.t, "tecla"))
         txt = self.texto()
         pos = len(txt)  # siempre escribimos al final del archivo
         nuevo = txt[:pos] + ch + txt[pos:]
@@ -486,6 +508,7 @@ class Director:
         self.set(input_explorer="")
         self.wait(0.3)
         for c in ruta:
+            self.sonidos.append((self.t, "tecla"))
             self.set(input_explorer=self.s.input_explorer + c)
             self.emit(max(1, round(FPS / 11 * self.rnd.uniform(0.6, 1.4))))
         self.wait(0.3)
@@ -563,6 +586,7 @@ class Director:
     def comando(self, cmd, cps=13):
         self.set(foco="terminal")
         for c in cmd:
+            self.sonidos.append((self.t, "tecla"))
             self.set(term_actual=self.s.term_actual + ((c, BLANCO),))
             self.emit(max(1, round(FPS / cps * self.rnd.uniform(0.6, 1.4))))
         self.wait(0.25)
@@ -590,6 +614,7 @@ class Director:
         self.set(term_actual=((etiqueta, color),))
         self.wait(0.5)
         for c in texto:
+            self.sonidos.append((self.t, "tecla"))
             self.set(term_actual=self.s.term_actual + ((c, BLANCO),))
             self.emit(max(1, round(FPS / cps * self.rnd.uniform(0.6, 1.4))))
         self.wait(0.3)
@@ -618,17 +643,17 @@ class Director:
             self.say(frases[0])
         total = dur
         if total is None:
-            total = sum(max(2.4, len(f) / 14.0) for f in frases) + 1.5
+            total = sum(duracion_frase(f) for f in frases) + 1.5
         n = round(total * FPS)
         cola = list(frases[1:])
-        lectura = max(2.4, len(frases[0]) / 14.0) if frases else 0
+        lectura = duracion_frase(frases[0]) if frases else 0
         siguiente = lectura
         for i in range(n):
             t = i / FPS
             if cola and t >= siguiente:
                 f = cola.pop(0)
                 self.say(f)
-                siguiente = t + max(2.4, len(f) / 14.0)
+                siguiente = t + duracion_frase(f)
             fade = min(1.0, t / 0.3, (total - t) / 0.3)
             self.set(slide=(obj, t, total), fundido=max(0.0, fade), ocultar_mouse=True)
             self.emit()
@@ -1785,7 +1810,8 @@ def escribir_textos(D):
     (AQUI / "subtitulos.srt").write_text("\n".join(srt), encoding="utf-8")
     g = ["# Guion de narración", "",
          "Lee cada frase en voz alta en el momento indicado. Los tiempos coinciden con `tutorial.mp4`.",
-         "Si grabas tu voz, puedes quitar los subtítulos incrustados poniendo `SUBTITULOS = False` en `render.py`.", ""]
+         "El video ya trae esta narración con voz generada (Kokoro). Si prefieres grabar tu propia voz, "
+         "pon `NARRACION = False` en `render.py` y usa estos tiempos.", ""]
     actual = None
     for a, b, t, cap in D.log:
         if cap != actual:
@@ -1799,6 +1825,193 @@ def escribir_textos(D):
             caps.append(f"{fmt_min(t)} {c}")
     g += ["", "## Capítulos para la descripción de YouTube", "", "```"] + caps + ["```", ""]
     (AQUI / "guion.md").write_text("\n".join(g), encoding="utf-8")
+
+
+# ============================================================== NARRACIÓN (voz)
+# Cómo debe "sonar" cada término técnico. Solo afecta al audio; los subtítulos
+# muestran el texto original. Se aplica en orden.
+PRONUNCIACION = [
+    ("docker compose up -d", "dóker compóus ap guión de"),
+    ("docker-compose.yml", "dóker compóus punto yámel"),
+    ("docker-compose", "dóker compóus"),
+    ("pip install -r requirements.txt", "pip instól guión erre ricuáirments punto te equis te"),
+    ("requirements.txt", "ricuáirments punto te equis te"),
+    ("empresa.txt", "empresa punto te equis te"),
+    ("ingest.py", "ínyest punto pai"),
+    ("app.py", "app punto pai"),
+    (".venv\\Scripts\\activate", "punto venv, barra, scripts, barra, áctiveit"),
+    ("'(.venv)'", "punto venv entre paréntesis"),
+    (".venv", "punto venv"),
+    ("os.getenv", "o ese punto guet env"),
+    ("load_dotenv()", "lóud dot env"),
+    ("load_dotenv", "lóud dot env"),
+    ("python-dotenv", "páiton dot env"),
+    ("text-splitters", "text esplíters"),
+    ("langchain-algo", "lang chéin guión algo"),
+    ("nomic-embed-text", "nómic embéd text"),
+    ("from_documents", "from dócuments"),
+    ("page_content", "péich cóntent"),
+    ("chunk_overlap", "chonk óuverlap"),
+    ("base_url", "béis iu ar el"),
+    ("PG_URL", "pe ge iu ar el"),
+    ("tu_api_key", "tu a pi kei"),
+    ("API key", "a pi kei"),
+    ("session_id", "sésion ai di"),
+    ("chat_history", "chat jístori"),
+    ("buscar_contexto", "buscar contexto"),
+    ("obtener_historial", "obtener historial"),
+    ("RunnableWithMessageHistory", "ránabol wiz mésech jístori"),
+    ("ChatOpenAI", "chat open ei ai"),
+    ("OpenAI", "open ei ai"),
+    ("ChatGPT", "chat ge pe te"),
+    ("GptLuna", "ge pe te luna"),
+    ("LangChain", "lang chéin"),
+    ("Qdrant", "cudrant"),
+    ("Ollama", "olama"),
+    ("PostgreSQL", "póstgres"),
+    ("Docker", "dóker"),
+    ("Python", "páiton"),
+    ("Visual Studio Code", "visual estudio coud"),
+    ("VS Code", "ve ese coud"),
+    ("embeddings", "embédings"),
+    ("embedding", "embéding"),
+    ("GitHub", "guit jab"),
+    ("Windows", "uíndous"),
+    ("Enter", "énter"),
+    ("Control + S", "control ese"),
+    ("+", "más"),
+    ("'-d'", "guión de"),
+    ("'ai'", "ei ai"),
+    ("'os'", "o ese"),
+    ("os", "o ese"),
+    ("human", "jiúman"),
+    ("context", "cóntext"),
+    ("image", "ímach"),
+    ("ports", "ports"),
+    ("services", "sérvises"),
+    ("environment", "envaironment"),
+    ("Document", "dócument"),
+    ("Path", "paz"),
+    ("psycopg", "sáico pe ge"),
+    ("uuid4", "u u i di cuatro"),
+    ("uuid", "u u i di"),
+    ("pip install", "pip instól"),
+    ("prompt", "prómt"),
+    ("retriever", "ritríver"),
+    ("metadata", "métadata"),
+    ("like", "láik"),
+    ("Latte", "late"),
+    ("URL", "iu ar el"),
+    ("API", "a pi"),
+    ("LLM", "ele ele eme"),
+    ("RAG", "rag"),
+    ("IA", "i a"),
+    ("0.3", "cero punto tres"),
+]
+
+
+def texto_hablado(texto):
+    """Convierte el texto del subtítulo en el texto que pronuncia la voz."""
+    t = texto
+    for original, dicho in PRONUNCIACION:
+        patron = re.escape(original)
+        if original[0].isalnum() or original[0] == "_":
+            patron = r"(?<![\w.])" + patron
+        if original[-1].isalnum() or original[-1] == "_":
+            patron += r"(?![\w])"
+        t = re.sub(patron, dicho, t, flags=re.IGNORECASE)
+    # palabras en MAYÚSCULAS (énfasis) -> minúsculas, para que no las deletree
+    t = re.sub(r"\b[A-ZÁÉÍÓÚÑ]{2,}\b", lambda m: m.group().lower(), t)
+    t = t.replace("'", "").replace("\"", "")
+    return t
+
+
+def rutas_modelo():
+    carpeta = AQUI / "modelos"
+    modelo = next((carpeta / n for n in ["kokoro-v1.0.onnx", "kokoro-v1.0.int8.onnx",
+                                          "kokoro-quantized.onnx", "kokoro.onnx"]
+                   if (carpeta / n).exists()), None)
+    voces = next((carpeta / n for n in ["voices-v1.0.bin", "voices.npz", "voices.bin"]
+                  if (carpeta / n).exists()), None)
+    return modelo, voces
+
+
+_kokoro = None
+
+
+def _sintetizar(args):
+    global _kokoro
+    texto, destino = args
+    import soundfile as sf
+    if _kokoro is None:
+        from kokoro_onnx import Kokoro
+        modelo, voces = rutas_modelo()
+        _kokoro = Kokoro(str(modelo), str(voces))
+    audio, sr = _kokoro.create(texto_hablado(texto), voice=VOZ, speed=VELOCIDAD, lang="es")
+    sf.write(str(destino), audio, sr)
+    return texto
+
+
+def preparar_voz(frases):
+    """Genera (o reutiliza de la caché) el audio de cada frase y guarda su duración."""
+    import hashlib
+    import soundfile as sf
+    cache = AQUI / "_voz"
+    cache.mkdir(exist_ok=True)
+    archivos = {}
+    pendientes = []
+    for f in dict.fromkeys(frases):
+        clave = hashlib.sha1(f"{VOZ}|{VELOCIDAD}|{texto_hablado(f)}".encode()).hexdigest()[:16]
+        archivos[f] = cache / f"{clave}.wav"
+        if not archivos[f].exists():
+            pendientes.append((f, archivos[f]))
+    if pendientes:
+        modelo, voces = rutas_modelo()
+        if not modelo or not voces:
+            raise SystemExit("Faltan los archivos del modelo Kokoro en video/modelos/ (ver README).")
+        print(f"Generando voz para {len(pendientes)} frases...", flush=True)
+        with mp.get_context("fork").Pool(max(1, mp.cpu_count())) as pool:
+            for i, _ in enumerate(pool.imap_unordered(_sintetizar, pendientes), 1):
+                if i % 10 == 0 or i == len(pendientes):
+                    print(f"  {i}/{len(pendientes)}", flush=True)
+    for f, ruta in archivos.items():
+        DUR_VOZ[f] = sf.info(str(ruta)).duration
+    return archivos
+
+
+def mezclar_audio(D, archivos, destino):
+    """Arma la pista de audio: narración + teclado + clics, en los tiempos del video."""
+    import numpy as np
+    import soundfile as sf
+    sr = 24000
+    total = int(len(D.frames) / FPS * sr) + sr
+    pista = np.zeros(total, dtype=np.float32)
+    for inicio, _, texto, _ in D.log:
+        if texto in archivos:
+            audio, _sr = sf.read(str(archivos[texto]), dtype="float32")
+            a = int(inicio * sr)
+            pista[a:a + len(audio)] += audio[:max(0, total - a)]
+    if TECLADO:
+        rnd = np.random.default_rng(3)
+        efectos = np.zeros(total, dtype=np.float32)
+        vistos = set()
+        for t, tipo in D.sonidos:
+            cuadro = round(t * FPS)
+            if (cuadro, tipo) in vistos:
+                continue  # varias letras en el mismo instante (autocompletado) = un solo golpe
+            vistos.add((cuadro, tipo))
+            n = int(0.012 * sr) if tipo == "tecla" else int(0.02 * sr)
+            ruido = rnd.standard_normal(n).astype(np.float32)
+            ruido = np.diff(ruido, prepend=0)          # más agudo, tipo "clac"
+            env = np.exp(-np.linspace(0, 9, n)).astype(np.float32)
+            vol = rnd.uniform(0.018, 0.032) if tipo == "tecla" else 0.05
+            golpe = ruido * env * vol
+            a = int(t * sr)
+            efectos[a:a + n] += golpe[:max(0, total - a)]
+        pista += efectos
+    pico = float(np.abs(pista).max()) or 1.0
+    pista *= min(1.0, 0.9 / pico)
+    sf.write(str(destino), pista, sr)
 
 
 SUBTITULOS = True
@@ -1830,6 +2043,10 @@ def trabajador(args):
 
 def main():
     global FRAMES
+    archivos = {}
+    if NARRACION:
+        # 1ª pasada: obtener las frases; 2ª pasada: usar la duración real de cada audio
+        archivos = preparar_voz([e[2] for e in guion().log])
     D = guion()
     FRAMES = D.frames
     total = len(FRAMES) / FPS
@@ -1853,10 +2070,15 @@ def main():
             print(f"  parte {i + 1}/{nproc} lista", flush=True)
     lista = tmp / "lista.txt"
     lista.write_text("".join(f"file '{t[3].name}'\n" for t in trabajos))
-    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(lista),
-                    "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=48000",
-                    "-c:v", "copy", "-c:a", "aac", "-b:a", "128k", "-shortest",
-                    "-movflags", "+faststart", str(AQUI / "tutorial.mp4")], check=True)
+    if NARRACION or TECLADO:
+        wav = AQUI / "narracion.wav"
+        mezclar_audio(D, archivos, wav)
+        audio = ["-i", str(wav), "-af", "loudnorm=I=-16:TP=-1.5:LRA=11", "-ar", "48000", "-ac", "2"]
+    else:
+        audio = ["-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=48000"]
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(lista)]
+                   + audio + ["-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
+                              "-shortest", "-movflags", "+faststart", str(AQUI / "tutorial.mp4")], check=True)
     for t in trabajos:
         t[3].unlink()
     lista.unlink()
