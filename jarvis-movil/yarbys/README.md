@@ -21,7 +21,7 @@ Cada cambio en esta carpeta compila el APK en GitHub Actions (`.github/workflows
 2. Pásalo al celular, ábrelo y permite "instalar apps desconocidas".
 3. Abre YARBYS y toca **Descargar modelos** (usa Wi-Fi: son unos 2.8 GB).
 
-Si creas una etiqueta `yarbys-v1.0.0`, el workflow también publica el APK en **Releases**, que es más fácil de descargar desde el celular.
+Si publicas un **Release** en GitHub, el workflow le adjunta el APK, que así es más fácil de descargar desde el celular.
 
 **Requisitos del celular:** Android 11 o superior, procesador de 64 bits (arm64) y, de preferencia, 8 GB de RAM. Con 6 GB funciona, pero más lento.
 

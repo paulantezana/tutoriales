@@ -1,15 +1,16 @@
 # Compila la app YARBYS (jarvis-movil/yarbys) y deja el APK listo para descargar.
 # - En cada push que cambie la app: el APK queda en la pestaña Actions (artefacto "yarbys-apk").
-# - Si creas una etiqueta yarbys-v* (ej: yarbys-v1.0.0): además se publica como Release.
+# - Si publicas un Release en GitHub: el APK se adjunta a ese Release.
 name: YARBYS APK
 
 on:
   push:
+    branches: ["**"]
     paths:
       - "jarvis-movil/yarbys/**"
       - ".github/workflows/yarbys-apk.yml"
-    tags:
-      - "yarbys-v*"
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -55,8 +56,8 @@ jobs:
           name: yarbys-apk
           path: jarvis-movil/yarbys/build/app/outputs/flutter-apk/yarbys.apk
 
-      - name: Publicar Release
-        if: startsWith(github.ref, 'refs/tags/yarbys-v')
+      - name: Adjuntar al Release
+        if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
           files: jarvis-movil/yarbys/build/app/outputs/flutter-apk/yarbys.apk
