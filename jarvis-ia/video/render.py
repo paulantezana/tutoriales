@@ -17,6 +17,7 @@ del modelo Kokoro en video/modelos/ (ver README).
 El código se lee de ../codigo, así que el video siempre coincide con el proyecto.
 """
 import copy
+import json
 import math
 import multiprocessing as mp
 import random
@@ -2203,7 +2204,7 @@ def _grabar_demo(args):
     import base64
     import io
     from playwright.sync_api import sync_playwright
-    seg, eventos, n = args
+    seg, eventos, n, firma = args
     carpeta = CACHE_WEB / seg
     carpeta.mkdir(parents=True, exist_ok=True)
     pagina = CODIGO / "web" / "index.html"
@@ -2243,6 +2244,7 @@ def _grabar_demo(args):
             datos = cdp.send("Page.captureScreenshot", {"format": "jpeg", "quality": 92, "optimizeForSpeed": True})["data"]
             (carpeta / f"{k:05d}.jpg").write_bytes(base64.b64decode(datos))
         b.close()
+    (carpeta / "firma.json").write_text(firma, encoding="utf-8")
     return seg
 
 
@@ -2253,8 +2255,13 @@ def grabar_demos(D):
     for seg, eventos in D.demos.items():
         n = 1 + max(s.navegador[1][2] for s in D.frames
                     if s.navegador and s.navegador[1][0] == "demo" and s.navegador[1][1] == seg)
+        firma = json.dumps({"n": n, "eventos": eventos, "pagina": [
+            (CODIGO / "web" / f).read_text(encoding="utf-8") for f in ("index.html", "estilo.css", "app.js")]})
+        marca = CACHE_WEB / seg / "firma.json"
+        if marca.exists() and marca.read_text(encoding="utf-8") == firma:
+            continue   # ya está grabada y no cambió
         shutil.rmtree(CACHE_WEB / seg, ignore_errors=True)
-        trabajos.append((seg, eventos, n))
+        trabajos.append((seg, eventos, n, firma))
     if not trabajos:
         return
     print(f"Grabando {len(trabajos)} demos de la página web...", flush=True)
