@@ -1,27 +1,25 @@
 import os
-import uuid
 import psycopg
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_ollama import OllamaEmbeddings
 from langchain_qdrant import QdrantVectorStore
 from langchain_postgres import PostgresChatMessageHistory
+from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnablePassthrough
-from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.output_parsers import StrOutputParser
 
 load_dotenv()
 
-# --- LLM: GptLuna (API compatible con OpenAI) ---
+# --- 1. El cerebro: GPT-6 Luna ---
 llm = ChatOpenAI(
-    base_url=os.getenv("GPTLUNA_BASE_URL"),
-    api_key=os.getenv("GPTLUNA_API_KEY"),
-    model=os.getenv("GPTLUNA_MODEL"),
-    temperature=0.3,
+    model=os.getenv("LLM_MODEL"),
+    api_key=os.getenv("OPENAI_API_KEY"),
+    use_responses_api=True,
 )
 
-# --- Retriever: Qdrant + embeddings de Ollama ---
+# --- 2. La búsqueda: Qdrant + embeddings de Ollama ---
 embeddings = OllamaEmbeddings(
     model=os.getenv("EMBED_MODEL"),
     base_url=os.getenv("OLLAMA_URL"),
@@ -33,18 +31,20 @@ vectorstore = QdrantVectorStore.from_existing_collection(
 )
 retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
 
-# --- Memoria del hilo en Postgres ---
-conn = psycopg.connect(os.getenv("PG_URL"))
+# --- 3. La memoria: PostgreSQL ---
+conn = psycopg.connect(os.getenv("PG_URL"), autocommit=True)
 TABLA = "chat_history"
 PostgresChatMessageHistory.create_tables(conn, TABLA)
 
 def obtener_historial(session_id: str):
     return PostgresChatMessageHistory(TABLA, session_id, sync_connection=conn)
 
-# --- Prompt y cadena RAG ---
-SISTEMA = """Eres un asistente amable de atención al cliente.
-Responde solo con la información del contexto.
-Si no encuentras la respuesta, dilo con honestidad.
+# --- 4. La personalidad de JARVIS ---
+SISTEMA = """Eres JARVIS, un asistente personal inteligente y amable.
+Responde en español, en máximo 3 oraciones,
+porque tus respuestas se leerán en voz alta.
+Usa la información personal del contexto cuando sea útil.
+Si no sabes algo, dilo con honestidad.
 
 Contexto:
 {context}"""
@@ -66,23 +66,12 @@ cadena = (
     | StrOutputParser()
 )
 
-asistente = RunnableWithMessageHistory(
-    cadena,
-    obtener_historial,
-    input_messages_key="question",
-    history_messages_key="history",
-)
-
-# --- Chat por consola ---
-if __name__ == "__main__":
-    session_id = input("ID de hilo (Enter = nuevo): ").strip() or str(uuid.uuid4())
-    print(f"Hilo: {session_id}  (escribe 'salir' para terminar)\n")
-    while True:
-        pregunta = input("Tú: ")
-        if pregunta.lower() == "salir":
-            break
-        respuesta = asistente.invoke(
-            {"question": pregunta},
-            config={"configurable": {"session_id": session_id}},
-        )
-        print(f"Asistente: {respuesta}\n")
+# --- 5. Preguntar a JARVIS (con memoria) ---
+def preguntar_a_jarvis(pregunta: str, hilo: str) -> str:
+    historial = obtener_historial(hilo)
+    respuesta = cadena.invoke({
+        "question": pregunta,
+        "history": historial.messages[-10:],  # los últimos 10 mensajes
+    })
+    historial.add_messages([HumanMessage(pregunta), AIMessage(respuesta)])
+    return respuesta

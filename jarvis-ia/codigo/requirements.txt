@@ -6,3 +6,5 @@ langchain-postgres
 langchain-text-splitters
 psycopg[binary]
 python-dotenv
+fastapi
+uvicorn

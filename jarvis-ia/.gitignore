@@ -4,4 +4,6 @@ __pycache__/
 video/_partes/
 video/modelos/
 video/_voz/
+video/_cache_web/
 video/narracion.wav
+.venv/

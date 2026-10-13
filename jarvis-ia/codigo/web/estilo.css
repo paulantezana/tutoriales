@@ -1,0 +1,122 @@
+:root {
+  --fondo: #050913;
+  --panel: rgba(16, 28, 48, 0.72);
+  --borde: rgba(84, 190, 255, 0.18);
+  --cian: #4fd1ff;
+  --azul: #1d6bd6;
+  --ambar: #ffb347;
+  --texto: #e6f1ff;
+  --suave: #8aa4c2;
+}
+
+* { box-sizing: border-box; margin: 0; }
+
+body {
+  min-height: 100vh;
+  font-family: "Segoe UI", Inter, system-ui, sans-serif;
+  color: var(--texto);
+  background:
+    radial-gradient(circle at 30% 45%, rgba(29, 107, 214, 0.25), transparent 45%),
+    radial-gradient(circle at 80% 90%, rgba(79, 209, 255, 0.08), transparent 40%),
+    var(--fondo);
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 48px;
+  align-items: center;
+  max-width: 1200px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+/* ---------- El núcleo animado ---------- */
+.nucleo { display: grid; justify-items: center; gap: 18px; }
+
+.orbe { position: relative; width: 300px; height: 300px; }
+
+.anillo, .centro {
+  position: absolute;
+  border-radius: 50%;
+  inset: 0;
+}
+.anillo { border: 2px solid transparent; }
+.a1 { border-top-color: var(--cian); border-bottom-color: var(--cian); animation: girar 6s linear infinite; }
+.a2 { inset: 30px; border-left-color: var(--azul); border-right-color: var(--azul); border-width: 6px; animation: girar 4s linear infinite reverse; }
+.a3 { inset: 62px; border: 2px dashed rgba(79, 209, 255, 0.55); animation: girar 10s linear infinite; }
+.centro {
+  inset: 98px;
+  background: radial-gradient(circle, #ffffff 0%, var(--cian) 35%, var(--azul) 75%);
+  box-shadow: 0 0 40px var(--cian), 0 0 90px rgba(79, 209, 255, 0.45);
+  animation: latir 3s ease-in-out infinite;
+}
+
+.orbe[data-estado="pensando"] .anillo { animation-duration: 1.2s; }
+.orbe[data-estado="pensando"] .centro { background: radial-gradient(circle, #fff 0%, var(--ambar) 40%, #d9741c 80%); box-shadow: 0 0 50px var(--ambar); }
+.orbe[data-estado="hablando"] .centro { animation: latir 0.5s ease-in-out infinite; }
+.orbe[data-estado="escuchando"] .a1 { border-color: var(--cian); animation: latir 0.9s ease-in-out infinite; }
+
+@keyframes girar { to { transform: rotate(360deg); } }
+@keyframes latir { 50% { transform: scale(1.12); } }
+
+h1 { font-size: 34px; letter-spacing: 0.35em; font-weight: 600; }
+.estado { color: var(--cian); letter-spacing: 0.2em; text-transform: uppercase; font-size: 14px; }
+
+/* ---------- El chat ---------- */
+.panel {
+  display: flex;
+  flex-direction: column;
+  height: min(640px, 85vh);
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-radius: 24px;
+  backdrop-filter: blur(12px);
+  overflow: hidden;
+}
+
+.chat { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+
+.mensaje {
+  max-width: 80%;
+  padding: 12px 16px;
+  border-radius: 18px;
+  line-height: 1.5;
+  animation: aparecer 0.3s ease-out;
+}
+.mensaje.jarvis { background: rgba(79, 209, 255, 0.1); border: 1px solid var(--borde); border-bottom-left-radius: 4px; }
+.mensaje.tu { align-self: flex-end; background: var(--azul); border-bottom-right-radius: 4px; }
+
+@keyframes aparecer { from { opacity: 0; transform: translateY(8px); } }
+
+.entrada { display: flex; gap: 10px; padding: 16px; border-top: 1px solid var(--borde); }
+.entrada input {
+  flex: 1;
+  padding: 14px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--borde);
+  background: rgba(5, 9, 19, 0.6);
+  color: var(--texto);
+  font: inherit;
+  outline: none;
+}
+.entrada input:focus { border-color: var(--cian); }
+
+.boton {
+  width: 50px; height: 50px;
+  display: grid; place-items: center;
+  border: none; border-radius: 50%;
+  background: rgba(79, 209, 255, 0.12);
+  color: var(--cian);
+  cursor: pointer;
+}
+.boton svg { width: 22px; height: 22px; fill: currentColor; }
+.boton.enviar { background: var(--cian); color: var(--fondo); }
+
+@media (max-width: 800px) {
+  .app { grid-template-columns: 1fr; gap: 24px; padding: 16px; }
+  .orbe { width: 200px; height: 200px; }
+  .panel { height: 60vh; }
+  .a2 { inset: 20px; } .a3 { inset: 42px; } .centro { inset: 66px; }
+}
