@@ -1,431 +1,431 @@
 1
-00:00:00,000 --> 00:00:08,167
+00:00:00,000 --> 00:00:07,067
 Hola, ¿qué tal? Bienvenidos a este curso, donde vamos a crear nuestro propio asistente de inteligencia artificial.
 
 2
-00:00:08,167 --> 00:00:17,633
+00:00:07,067 --> 00:00:15,437
 No te preocupes si nunca has trabajado con IA: voy a explicar cada concepto y cada línea de código, paso a paso.
 
 3
-00:00:17,633 --> 00:00:24,419
+00:00:15,700 --> 00:00:21,147
 Antes de empezar, mira lo que vamos a tener al terminar este video.
 
 4
-00:00:36,933 --> 00:00:44,433
+00:00:35,000 --> 00:00:41,400
 Es un asistente que responde usando la información de NUESTROS documentos, en este caso de una cafetería.
 
 5
-00:00:44,433 --> 00:00:53,933
+00:00:41,400 --> 00:00:49,087
 Y además recuerda la conversación: fíjate que en la segunda pregunta no repetí de qué estábamos hablando.
 
 6
-00:00:54,000 --> 00:01:03,800
+00:00:49,967 --> 00:00:59,100
 Primero, unos conceptos rápidos. Un LLM, o modelo de lenguaje, es una inteligencia artificial que entiende y escribe texto, como ChatGPT.
 
 7
-00:01:03,800 --> 00:01:12,167
+00:00:59,100 --> 00:01:07,233
 Funciona así: le enviamos un mensaje, y nos responde con otro texto. En este curso usaremos GptLuna como nuestro LLM.
 
 8
-00:01:12,167 --> 00:01:22,200
+00:01:07,233 --> 00:01:16,051
 Pero hay un problema: el LLM no conoce la información de TU negocio. No sabe tus horarios, tus precios ni tus productos.
 
 9
-00:01:22,200 --> 00:01:28,700
+00:01:16,333 --> 00:01:21,700
 Para resolverlo usamos embeddings. Un embedding convierte un texto en una lista de números.
 
 10
-00:01:28,700 --> 00:01:37,433
+00:01:21,700 --> 00:01:29,367
 Lo interesante es que textos con significado parecido quedan con números parecidos, es decir, quedan 'cerca' en este mapa.
 
 11
-00:01:37,433 --> 00:01:44,800
+00:01:29,367 --> 00:01:35,267
 Por ejemplo, 'horario de atención' queda cerca de '¿a qué hora abren?', aunque usen palabras distintas.
 
 12
-00:01:44,800 --> 00:01:53,067
+00:01:35,267 --> 00:01:42,207
 Estos números los va a generar Ollama, un programa gratuito que corre en tu propia computadora.
 
 13
-00:01:53,067 --> 00:01:59,167
+00:01:42,433 --> 00:01:47,900
 Esos vectores los guardamos en una base de datos vectorial. Nosotros usaremos Qdrant.
 
 14
-00:01:59,167 --> 00:02:09,567
+00:01:47,900 --> 00:01:56,590
 Cuando llega una pregunta, Qdrant la compara con todos los textos guardados y nos devuelve los más parecidos, con un puntaje.
 
 15
-00:02:09,567 --> 00:02:16,300
+00:01:56,900 --> 00:02:03,200
 Juntando todo tenemos lo que se conoce como RAG. Suena complicado, pero son solo cuatro pasos.
 
 16
-00:02:16,300 --> 00:02:24,900
+00:02:03,200 --> 00:02:11,067
 Llega la pregunta, buscamos la información relevante en Qdrant, la añadimos a la pregunta, y el LLM genera la respuesta.
 
 17
-00:02:24,900 --> 00:02:32,067
+00:02:11,067 --> 00:02:17,581
 Así el asistente responde con datos reales de tu negocio, y no se inventa cosas.
 
 18
-00:02:32,067 --> 00:02:41,233
+00:02:17,833 --> 00:02:25,500
 El último concepto es la memoria. Si pregunto '¿y cuánto cuesta el delivery?', el asistente necesita recordar de qué hablábamos.
 
 19
-00:02:41,233 --> 00:02:49,767
+00:02:25,500 --> 00:02:32,483
 Por eso guardaremos cada conversación, a la que llamaremos 'hilo', en una base de datos PostgreSQL.
 
 20
-00:02:49,767 --> 00:02:54,567
+00:02:32,767 --> 00:02:37,233
 Este es el plan completo. Vamos a escribir dos programas en Python.
 
 21
-00:02:54,567 --> 00:03:04,067
+00:02:37,233 --> 00:02:45,800
 El primero, ingest.py, lee nuestros documentos, los convierte en vectores con Ollama y los guarda en Qdrant. Solo se ejecuta una vez.
 
 22
-00:03:04,067 --> 00:03:12,367
+00:02:45,800 --> 00:02:53,433
 El segundo, app.py, es el chat: busca el contexto en Qdrant, lee el historial en PostgreSQL y le pregunta a GptLuna.
 
 23
-00:03:12,367 --> 00:03:21,067
+00:02:53,433 --> 00:03:01,270
 Y para unir todas estas piezas usaremos LangChain, una librería de Python hecha justamente para esto.
 
 24
-00:03:21,067 --> 00:03:27,233
+00:03:01,533 --> 00:03:07,233
 Para seguir el tutorial necesitas tener instalado Python, Docker y Visual Studio Code.
 
 25
-00:03:27,233 --> 00:03:33,933
+00:03:07,233 --> 00:03:13,299
 Y una API key de GptLuna, que es la clave que nos permite usar su modelo.
 
 26
-00:03:33,933 --> 00:03:40,300
+00:03:13,567 --> 00:03:19,133
 Bien, ¡manos a la obra! Abrí en Visual Studio Code una carpeta vacía llamada 'asistente'.
 
 27
-00:03:40,300 --> 00:03:46,500
+00:03:19,133 --> 00:03:24,567
 Lo primero es levantar los tres servicios que necesitamos: Qdrant, PostgreSQL y Ollama.
 
 28
-00:03:46,500 --> 00:03:55,357
+00:03:24,567 --> 00:03:32,297
 Para no instalarlos uno por uno, usaremos Docker. Creamos un archivo llamado docker-compose.yml.
 
 29
-00:04:00,333 --> 00:04:05,133
+00:03:38,400 --> 00:03:42,900
 Dentro de 'services' definimos cada servicio. El primero es Qdrant.
 
 30
-00:04:05,133 --> 00:04:13,267
+00:03:42,900 --> 00:03:51,233
 'image' es el programa que Docker va a descargar, y 'ports' es el puerto por el que nos vamos a conectar: el 6333.
 
 31
-00:04:13,267 --> 00:04:20,981
+00:03:51,233 --> 00:03:57,299
 El volumen sirve para que los datos no se borren cuando apaguemos el contenedor.
 
 32
-00:04:35,400 --> 00:04:42,900
+00:04:12,533 --> 00:04:18,833
 Ahora PostgreSQL. Con 'environment' le decimos el usuario, la contraseña y el nombre de la base de datos.
 
 33
-00:04:42,900 --> 00:04:50,043
+00:04:18,833 --> 00:04:24,707
 Recuerda estos datos, porque los usaremos más adelante para conectarnos.
 
 34
-00:04:57,000 --> 00:05:04,929
+00:04:32,467 --> 00:04:40,517
 Y por último Ollama, en el puerto 11434. Él se encargará de generar los embeddings.
 
 35
-00:05:06,767 --> 00:05:11,467
+00:04:43,167 --> 00:04:47,600
 Al final declaramos los tres volúmenes. Guardamos con Control + S.
 
 36
-00:05:11,467 --> 00:05:17,100
+00:04:47,600 --> 00:04:53,000
 Ahora abrimos la terminal integrada de VS Code con Control + comilla invertida.
 
 37
-00:05:17,100 --> 00:05:23,667
+00:04:53,000 --> 00:04:59,033
 Y escribimos 'docker compose up -d'. La '-d' hace que los servicios corran en segundo plano.
 
 38
-00:05:23,667 --> 00:05:31,467
+00:04:59,033 --> 00:05:05,900
 La primera vez tarda un poco, porque Docker descarga las imágenes. Listo, los tres servicios están corriendo.
 
 39
-00:05:31,467 --> 00:05:39,824
+00:05:05,900 --> 00:05:12,457
 Ahora descargamos dentro de Ollama el modelo que genera los embeddings: nomic-embed-text.
 
 40
-00:05:41,067 --> 00:05:50,267
+00:05:15,500 --> 00:05:23,433
 Ahora preparamos Python. Primero creamos un entorno virtual: una carpeta donde se instalan las librerías solo para este proyecto.
 
 41
-00:05:50,267 --> 00:05:53,767
+00:05:23,433 --> 00:05:27,200
 Mira, en el explorador apareció la carpeta .venv.
 
 42
-00:05:53,767 --> 00:05:58,333
+00:05:27,200 --> 00:05:32,300
 Lo activamos. En Windows el comando es '.venv\Scripts\activate'.
 
 43
-00:05:58,333 --> 00:06:05,400
+00:05:32,300 --> 00:05:39,633
 Fíjate que ahora la terminal muestra '(.venv)' al inicio: eso significa que el entorno está activo.
 
 44
-00:06:05,400 --> 00:06:13,900
+00:05:39,633 --> 00:05:47,321
 Ahora creamos el archivo requirements.txt, con la lista de librerías que vamos a necesitar.
 
 45
-00:06:23,033 --> 00:06:27,467
+00:05:57,267 --> 00:06:01,233
 'langchain' es la librería principal que une todas las piezas.
 
 46
-00:06:27,467 --> 00:06:39,633
+00:06:01,233 --> 00:06:11,673
 Cada 'langchain-algo' es una integración: openai para hablar con GptLuna, ollama para los embeddings, y qdrant y postgres para las bases de datos.
 
 47
-00:06:39,633 --> 00:06:49,733
+00:06:12,200 --> 00:06:21,567
 text-splitters sirve para cortar textos largos, psycopg conecta Python con PostgreSQL, y python-dotenv lee nuestra configuración.
 
 48
-00:06:49,733 --> 00:06:55,519
+00:06:21,567 --> 00:06:27,185
 Las instalamos con 'pip install -r requirements.txt'.
 
 49
-00:06:56,833 --> 00:06:59,467
+00:06:28,667 --> 00:06:31,367
 ¡Perfecto! Ya tenemos todo instalado.
 
 50
-00:06:59,467 --> 00:07:09,538
+00:06:31,367 --> 00:06:39,523
 Ahora la configuración. Creamos un archivo llamado .env: aquí van las claves y direcciones, separadas del código.
 
 51
-00:07:13,500 --> 00:07:22,367
+00:06:45,400 --> 00:06:53,500
 GptLuna funciona igual que la API de OpenAI, así que solo necesitamos tres datos: la URL, la API key y el nombre del modelo.
 
 52
-00:07:22,367 --> 00:07:31,652
+00:06:53,500 --> 00:07:01,401
 Revisa los valores exactos en el panel de tu cuenta de GptLuna, y reemplaza 'tu_api_key' por tu clave.
 
 53
-00:07:51,367 --> 00:07:58,067
+00:07:21,900 --> 00:07:27,500
 Debajo van las direcciones de los servicios que levantamos con Docker, con los mismos puertos.
 
 54
-00:07:58,067 --> 00:08:07,400
+00:07:27,500 --> 00:07:35,785
 Fíjate que en PG_URL aparecen el usuario, la contraseña y la base de datos que definimos en docker-compose.
 
 55
-00:08:07,400 --> 00:08:13,467
+00:07:36,300 --> 00:07:41,967
 Un consejo importante: este archivo tiene tu clave secreta. ¡Nunca lo subas a GitHub!
 
 56
-00:08:13,467 --> 00:08:23,681
+00:07:41,967 --> 00:07:50,891
 Ahora necesitamos los documentos que el asistente va a 'leer'. Creamos una carpeta docs con un archivo empresa.txt.
 
 57
-00:08:31,733 --> 00:08:41,233
+00:08:00,233 --> 00:08:08,400
 Como ejemplo, uso la información de una cafetería imaginaria: Luna Café. Su horario, su producto estrella, el delivery y el contacto.
 
 58
-00:08:41,233 --> 00:08:47,733
+00:08:08,400 --> 00:08:14,000
 Tú aquí puedes poner la información de tu negocio, tus manuales o tus preguntas frecuentes.
 
 59
-00:08:47,733 --> 00:08:58,948
+00:08:14,000 --> 00:08:23,415
 Ahora sí, nuestro primer programa: ingest.py. Su trabajo es leer los documentos, convertirlos en vectores y guardarlos en Qdrant.
 
 60
-00:09:09,767 --> 00:09:18,567
+00:08:36,033 --> 00:08:43,767
 Empezamos importando lo que vamos a usar. 'os' nos permite leer variables de configuración, y 'Path' trabajar con archivos.
 
 61
-00:09:18,567 --> 00:09:27,995
+00:08:43,767 --> 00:08:51,347
 De LangChain traemos Document, el cortador de textos, los embeddings de Ollama y la conexión con Qdrant.
 
 62
-00:09:28,467 --> 00:09:36,538
+00:08:52,600 --> 00:08:58,986
 load_dotenv() lee el archivo .env, para que podamos usar esas variables en el código.
 
 63
-00:09:48,533 --> 00:09:52,733
+00:09:11,800 --> 00:09:15,800
 Aquí recorremos todos los archivos .txt de la carpeta docs.
 
 64
-00:09:52,733 --> 00:10:03,519
+00:09:15,800 --> 00:09:24,618
 Por cada archivo creamos un Document de LangChain: page_content es el texto, y en metadata guardamos el nombre del archivo.
 
 65
-00:10:13,733 --> 00:10:21,733
+00:09:35,633 --> 00:09:43,067
 Los documentos largos se cortan en fragmentos de 500 caracteres. Así, luego buscamos solo el pedazo que importa.
 
 66
-00:10:21,733 --> 00:10:31,376
+00:09:43,067 --> 00:09:51,330
 chunk_overlap repite 50 caracteres entre un fragmento y el siguiente, para no cortar una idea por la mitad.
 
 67
-00:10:40,767 --> 00:10:50,981
+00:10:01,533 --> 00:10:10,266
 Creamos el generador de embeddings con Ollama. Con os.getenv leemos el modelo y la dirección desde el archivo .env.
 
 68
-00:11:01,867 --> 00:11:12,510
+00:10:21,967 --> 00:10:30,593
 Y aquí la magia: from_documents toma cada fragmento, le pide a Ollama su vector, y guarda todo en la colección de Qdrant.
 
 69
-00:11:16,200 --> 00:11:22,500
+00:10:35,100 --> 00:10:40,833
 Al final mostramos un mensaje con cuántos fragmentos se guardaron. Guardamos el archivo.
 
 70
-00:11:22,500 --> 00:11:26,367
+00:10:40,833 --> 00:10:44,800
 Vamos a ejecutarlo en la terminal: python ingest.py.
 
 71
-00:11:26,367 --> 00:11:33,433
+00:10:44,800 --> 00:10:51,000
 ¡Funciona! Como nuestro documento es corto, quedó en un solo fragmento. Ya está guardado en Qdrant.
 
 72
-00:11:33,433 --> 00:11:40,148
+00:10:51,000 --> 00:10:57,215
 Ahora la parte principal: el asistente. Creamos el archivo app.py.
 
 73
-00:12:10,700 --> 00:12:20,933
+00:11:28,267 --> 00:11:37,661
 Importamos os, uuid para crear un identificador único para cada conversación, y psycopg para conectarnos a PostgreSQL.
 
 74
-00:12:20,933 --> 00:12:29,867
+00:11:38,267 --> 00:11:46,018
 Luego, una pieza de LangChain por cada servicio: GptLuna, Ollama, Qdrant y la memoria en PostgreSQL.
 
 75
-00:12:29,867 --> 00:12:40,224
+00:11:46,633 --> 00:11:54,833
 Y estas son herramientas para armar la 'cadena', que es el camino que sigue cada pregunta. Las veremos en un momento.
 
 76
-00:12:55,733 --> 00:13:04,667
+00:12:11,133 --> 00:12:20,900
 Configuramos el LLM. Como GptLuna es compatible con OpenAI, usamos ChatOpenAI y solo cambiamos la base_url por la de GptLuna.
 
 77
-00:13:04,667 --> 00:13:13,738
+00:12:20,900 --> 00:12:29,270
 La temperatura controla la creatividad: con 0.3 las respuestas son más precisas y menos inventadas.
 
 78
-00:13:35,933 --> 00:13:46,148
+00:12:52,267 --> 00:13:00,807
 Ahora nos conectamos a la colección que ya creamos con ingest.py. Es importante usar el mismo modelo de embeddings.
 
 79
-00:13:50,633 --> 00:13:59,562
+00:13:06,100 --> 00:13:13,638
 El retriever es nuestro buscador: por cada pregunta nos devolverá los 3 fragmentos más parecidos.
 
 80
-00:14:11,233 --> 00:14:23,090
+00:13:26,100 --> 00:13:35,451
 Ahora la memoria. Nos conectamos a PostgreSQL con la dirección del .env, y creamos la tabla chat_history, donde se guardarán los mensajes.
 
 81
-00:14:30,367 --> 00:14:38,067
+00:13:43,533 --> 00:13:50,333
 Esta función recibe el identificador de un hilo, el session_id, y devuelve el historial de esa conversación.
 
 82
-00:14:38,067 --> 00:14:45,067
+00:13:50,333 --> 00:13:56,037
 Así, cada conversación tiene su propia memoria, separada de las demás.
 
 83
-00:15:01,467 --> 00:15:10,833
+00:14:13,233 --> 00:14:21,333
 Estas son las instrucciones del asistente: le decimos que sea amable, que responda solo con el contexto, y que si no sabe, lo diga.
 
 84
-00:15:10,833 --> 00:15:19,976
+00:14:21,333 --> 00:14:28,658
 Las llaves con 'context' son un espacio vacío: ahí LangChain pondrá los textos que encuentre Qdrant.
 
 85
-00:15:28,733 --> 00:15:34,600
+00:14:38,233 --> 00:14:43,667
 El prompt es el mensaje completo que le enviaremos a GptLuna, y tiene tres partes.
 
 86
-00:15:34,600 --> 00:15:43,814
+00:14:43,667 --> 00:14:50,906
 Las instrucciones con el contexto, el historial de la conversación, y la pregunta actual del usuario.
 
 87
-00:15:52,767 --> 00:16:02,624
+00:15:00,667 --> 00:15:08,802
 buscar_contexto toma la pregunta, le pide al retriever los fragmentos parecidos, y une sus textos en uno solo.
 
 88
-00:16:09,333 --> 00:16:15,333
+00:15:16,300 --> 00:15:21,633
 Y esta es la cadena. El símbolo de la barra vertical significa 'y luego pásaselo a'.
 
 89
-00:16:15,333 --> 00:16:27,262
+00:15:21,633 --> 00:15:31,539
 Primero agregamos el contexto, luego armamos el prompt, se lo pasamos a GptLuna, y al final nos quedamos solo con el texto de la respuesta.
 
 90
-00:16:37,733 --> 00:16:44,167
+00:15:42,800 --> 00:15:48,700
 Finalmente envolvemos la cadena con RunnableWithMessageHistory. Esto le agrega la memoria.
 
 91
-00:16:44,167 --> 00:16:54,810
+00:15:48,700 --> 00:15:57,198
 En cada mensaje lee el historial del hilo, y al terminar guarda automáticamente la pregunta y la respuesta en PostgreSQL.
 
 92
-00:17:07,700 --> 00:17:18,200
+00:16:10,900 --> 00:16:20,145
 Ya solo falta el chat en la consola. Primero pedimos el id del hilo: si presionamos Enter, se crea uno nuevo con uuid4.
 
 93
-00:17:35,533 --> 00:17:44,733
+00:16:38,267 --> 00:16:46,300
 Y este bucle se repite para siempre: pide una pregunta, se la envía al asistente junto con el session_id, y muestra la respuesta.
 
 94
-00:17:44,733 --> 00:17:49,500
+00:16:46,300 --> 00:16:50,425
 Si escribimos 'salir', el programa termina.
 
 95
-00:17:49,500 --> 00:17:55,100
+00:16:50,933 --> 00:16:56,200
 ¡Y listo! Todo el asistente en unas 90 líneas de código. Vamos a probarlo.
 
 96
-00:17:55,100 --> 00:18:01,814
+00:16:56,200 --> 00:17:02,394
 Maximizo la terminal para verlo mejor, y ejecutamos python app.py.
 
 97
-00:18:08,467 --> 00:18:20,395
+00:17:09,567 --> 00:17:18,961
 Presioné Enter, así que se creó un hilo nuevo. Le pregunto por el producto estrella... ¡y responde con la información de nuestro documento!
 
 98
-00:18:26,400 --> 00:18:35,614
+00:17:25,767 --> 00:17:32,750
 Ahora pregunto '¿Y hasta qué hora atienden?'. Funciona porque recibe el historial de la conversación.
 
 99
-00:18:41,000 --> 00:18:49,786
+00:17:38,933 --> 00:17:45,874
 Ahora la prueba de fuego para la memoria: salimos, y volvemos a entrar con el mismo id de hilo.
 
 100
-00:19:00,733 --> 00:19:06,833
+00:17:57,600 --> 00:18:03,111
 ¡Lo recuerda todo! Porque cada mensaje quedó guardado en PostgreSQL.
 
 101
-00:19:06,833 --> 00:19:13,333
+00:18:03,133 --> 00:18:09,400
 Si quieres comprobarlo, podemos ver la tabla chat_history directamente en la base de datos.
 
 102
-00:19:13,333 --> 00:19:18,967
+00:18:09,400 --> 00:18:14,367
 Ahí están: los mensajes del usuario como 'human' y los del asistente como 'ai'.
 
 103
-00:19:18,967 --> 00:19:23,967
+00:18:14,367 --> 00:18:19,000
 Hagamos un resumen. Levantamos Qdrant, PostgreSQL y Ollama con Docker.
 
 104
-00:19:23,967 --> 00:19:29,967
+00:18:19,000 --> 00:18:24,833
 Con ingest.py convertimos nuestros documentos en vectores y los guardamos en Qdrant.
 
 105
-00:19:29,967 --> 00:19:35,700
+00:18:24,833 --> 00:18:31,000
 Y con app.py creamos un asistente con RAG y memoria, usando GptLuna y LangChain.
 
 106
-00:19:35,700 --> 00:19:45,400
+00:18:31,000 --> 00:18:39,925
 Como reto, prueba agregar tus propios documentos a la carpeta docs, vuelve a ejecutar ingest.py, y hazle preguntas.
 
 107
-00:19:45,400 --> 00:19:50,267
+00:18:40,167 --> 00:18:44,500
 El código completo está en GitHub, el enlace está en la descripción.
 
 108
-00:19:50,267 --> 00:20:01,533
+00:18:44,500 --> 00:18:54,043
 Si te sirvió, dale like, suscríbete y déjame en los comentarios tus dudas. En la próxima clase le crearemos una interfaz web. ¡Nos vemos!
