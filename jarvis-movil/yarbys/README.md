@@ -15,6 +15,8 @@ Internet solo se usa una vez, para descargar los modelos. Después YARBYS funcio
 
 ## Probar el APK ya compilado (Android)
 
+**Descarga directa** (ábrelo desde el celular): https://github.com/paulantezana/tutoriales/releases/download/yarbys-latest/yarbys.apk
+
 Cada cambio en esta carpeta compila el APK en GitHub Actions (`.github/workflows/yarbys-apk.yml`):
 
 1. En GitHub abre la pestaña **Actions**, elige la última ejecución de **YARBYS APK** y descarga el artefacto **yarbys-apk** (un `.zip` con `yarbys.apk`).

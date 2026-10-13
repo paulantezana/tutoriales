@@ -21,6 +21,8 @@ Curso en video y código de **YARBYS**, un asistente de inteligencia artificial 
 
 ## Descargar el APK
 
+**Descarga directa** (ábrelo desde el celular): https://github.com/paulantezana/tutoriales/releases/download/yarbys-latest/yarbys.apk
+
 El workflow [`.github/workflows/yarbys-apk.yml`](../.github/workflows/yarbys-apk.yml) compila el APK en GitHub Actions cada vez que cambia `yarbys/`. Búscalo en la pestaña **Actions** → **YARBYS APK** → artefacto **yarbys-apk**. Si publicas un **Release** en GitHub, el APK se adjunta a ese Release.
 
 ## Video tutorial (`video/`)

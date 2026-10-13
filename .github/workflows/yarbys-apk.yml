@@ -61,3 +61,23 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: jarvis-movil/yarbys/build/app/outputs/flutter-apk/yarbys.apk
+
+      # Descarga directa desde el celular, sin iniciar sesión ni descomprimir:
+      # https://github.com/<usuario>/<repo>/releases/download/yarbys-latest/yarbys.apk
+      - name: Publicar la última versión
+        if: github.event_name != 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: yarbys-latest
+          target_commitish: ${{ github.sha }}
+          name: YARBYS (última versión)
+          prerelease: true
+          make_latest: false
+          overwrite_files: true
+          body: |
+            APK de YARBYS compilado automáticamente (rama ${{ github.ref_name }}, commit ${{ github.sha }}).
+
+            1. Descarga **yarbys.apk** desde tu celular Android 11 o superior.
+            2. Ábrelo y permite "instalar apps desconocidas".
+            3. Abre YARBYS y toca **Descargar modelos** (usa Wi-Fi: unos 2.8 GB).
+          files: jarvis-movil/yarbys/build/app/outputs/flutter-apk/yarbys.apk
