@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JARVIS</title>
+  <link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+  <main class="app">
+    <section class="nucleo">
+      <div id="orbe" class="orbe" data-estado="listo">
+        <span class="anillo a1"></span>
+        <span class="anillo a2"></span>
+        <span class="anillo a3"></span>
+        <span class="centro"></span>
+      </div>
+      <h1>J.A.R.V.I.S.</h1>
+      <p id="estado" class="estado">En línea</p>
+    </section>
+
+    <section class="panel">
+      <div id="chat" class="chat">
+        <div class="mensaje jarvis">Hola, soy JARVIS. ¿En qué te ayudo hoy?</div>
+      </div>
+      <form id="form" class="entrada">
+        <button type="button" id="mic" class="boton" title="Hablar">
+          <svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-2.1a7 7 0 0 0 6-6.9Z"/></svg>
+        </button>
+        <input id="texto" autocomplete="off" placeholder="Escribe o habla con JARVIS...">
+        <button class="boton enviar" title="Enviar">
+          <svg viewBox="0 0 24 24"><path d="M3 20.5 21 12 3 3.5v6.6l12 1.9-12 1.9Z"/></svg>
+        </button>
+      </form>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

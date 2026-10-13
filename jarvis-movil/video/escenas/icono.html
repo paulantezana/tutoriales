@@ -1,0 +1,18 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;width:1024px;height:1024px;background:#0f1418;overflow:hidden}
+svg{display:block} text{display:none}</style></head>
+<body><svg id="s" width="1024" height="1024" viewBox="-512 -512 1024 1024"></svg>
+<script src="lib/nucleo.js"></script>
+<script>
+dibujarNucleo(document.querySelector("#s"), 400, {nombre: "", estado: ""});
+// centro: una "Y" sólida
+const NS = "http://www.w3.org/2000/svg";
+const t = document.createElementNS(NS, "path");
+t.setAttribute("d", "M-70 -70 L0 10 L70 -70 M0 10 L0 85");
+t.setAttribute("stroke", "#e9fbff"); t.setAttribute("stroke-width", "34");
+t.setAttribute("stroke-linecap", "round"); t.setAttribute("stroke-linejoin", "round"); t.setAttribute("fill", "none");
+document.querySelector("#nucleo").appendChild(t);
+document.querySelector("#nucleo > line")?.remove();
+window.__listo = true;
+</script></body></html>

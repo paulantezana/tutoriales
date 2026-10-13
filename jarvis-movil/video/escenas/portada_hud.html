@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="estilos.css">
+  <style>
+    body { --acento: var(--enfasis); }
+    body.rojo { --acento: var(--terciario); }
+
+    /* ---------- marco HUD ---------- */
+    .esquina { position: absolute; width: 70px; height: 70px; border-color: var(--hud); border-style: solid; opacity: .8; }
+    .e1 { left: 40px; top: 40px; border-width: 3px 0 0 3px; }
+    .e2 { right: 40px; top: 40px; border-width: 3px 3px 0 0; }
+    .e3 { left: 40px; bottom: 40px; border-width: 0 0 3px 3px; }
+    .e4 { right: 40px; bottom: 40px; border-width: 0 3px 3px 0; }
+    .micro { position: absolute; font: 400 17px "JetBrains Mono"; color: var(--hud); letter-spacing: .12em; opacity: .75; }
+
+    /* ---------- texto ---------- */
+    .izq { position: absolute; left: 140px; top: 140px; width: 900px; }
+    .kicker { background: var(--primario-suave); color: var(--hud); }
+    .t1 { font: 800 72px/1.05 "Open Sans"; margin: 34px 0 0; }
+    .t2 { font: 800 156px/1.1 "Open Sans"; margin: 0 0 0 4px; color: var(--hud); letter-spacing: .04em; }
+    .t3 { font: 800 72px/1.1 "Open Sans"; margin: 14px 0 0; }
+    .resaltado::after { background: var(--acento); }
+    .sub { font: 400 30px/1.45 "Lato"; color: var(--suave); margin-top: 28px; max-width: 790px; }
+    .sub b { color: #fff; }
+    .chips { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; max-width: 900px; }
+    .chip { background: transparent; border: 2px solid var(--borde); border-radius: 10px; padding: 12px 20px; font-size: 24px; }
+    .insignias { position: absolute; left: 140px; top: 990px; display: flex; gap: 32px; font: 700 22px "Lato"; color: var(--suave); }
+    .insignias span { display: inline-flex; align-items: center; gap: 10px; }
+    .insignias .icono { width: 26px; height: 26px; color: var(--hud); }
+
+    /* ---------- HUD ---------- */
+    #hud { position: absolute; left: 0; top: 0; }
+
+    /* ---------- celular ---------- */
+    .celular { position: absolute; left: 1215px; top: 130px; width: 420px; height: 840px;
+      border-radius: 60px; background: #0b0e10; padding: 14px; border: 2px solid #2b3a44; }
+    .pantalla { width: 100%; height: 100%; border-radius: 48px; background: #0a0f13; overflow: hidden; position: relative; color: #fff; }
+    .isla { position: absolute; left: 50%; top: 13px; width: 112px; height: 30px; border-radius: 15px; background: #000; transform: translateX(-50%); }
+    .estado-tel { display: flex; justify-content: space-between; padding: 17px 32px 0; font: 700 17px "Lato"; color: #e8eef3; }
+    .estado-tel .icono { width: 18px; height: 18px; }
+    .app-top { display: flex; align-items: center; justify-content: space-between; padding: 28px 24px 0; }
+    .app-top h3 { margin: 0; font: 800 28px "Open Sans"; letter-spacing: .18em; color: var(--hud); }
+    .modo { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 8px;
+      border: 1.5px solid var(--acento); color: var(--acento); font: 700 13px "JetBrains Mono"; letter-spacing: .08em; }
+    .modo .icono { width: 16px; height: 16px; }
+    #nucleo-app { display: block; margin: 18px auto 0; }
+    .estado-app { text-align: center; margin-top: 6px; font: 700 14px "JetBrains Mono"; letter-spacing: .2em; color: var(--hud); }
+    .chat { padding: 20px 20px 0; display: flex; flex-direction: column; gap: 12px; }
+    .msg { max-width: 84%; padding: 12px 16px; font: 400 18px/1.4 "Lato"; border-radius: 4px 16px 16px 16px; }
+    .msg.tu { align-self: flex-end; background: var(--primario); border-radius: 16px 4px 16px 16px; }
+    .msg.ia { border: 1.5px solid var(--hud-tenue); background: #0e1a21; }
+    .fuente-doc { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; font: 700 13px "JetBrains Mono"; color: var(--acento); }
+    .fuente-doc .icono { width: 14px; height: 14px; }
+    .entrada { position: absolute; left: 16px; right: 16px; bottom: 24px; display: flex; gap: 10px; align-items: center; }
+    .campo { flex: 1; height: 54px; border-radius: 12px; border: 1.5px solid var(--hud-tenue); background: #0e1a21;
+      display: flex; align-items: center; padding: 0 18px; font: 400 17px "Lato"; color: #7f95a5; }
+    .mic { width: 54px; height: 54px; border-radius: 12px; background: var(--hud); display: grid; place-items: center; }
+    .mic .icono { width: 24px; height: 24px; color: #04161f; }
+
+    .logo { position: absolute; right: 62px; bottom: 58px; width: 80px; height: 80px; }
+  </style>
+</head>
+<body class="hud">
+  <div id="escena">
+    <svg id="hud" width="1920" height="1080" viewBox="0 0 1920 1080"></svg>
+    <span class="esquina e1"></span><span class="esquina e2"></span><span class="esquina e3"></span><span class="esquina e4"></span>
+    <div class="micro" style="left:130px;top:62px">YARBYS OS v1.0 · NÚCLEO NEURONAL ACTIVO</div>
+    <div class="micro" style="right:130px;top:62px;background:var(--fondo);padding:0 8px">MODO LOCAL · SIN CONEXIÓN ●</div>
+
+    <div class="izq">
+      <span class="kicker" id="k"></span>
+      <h1 class="t1">Crea tu propio</h1>
+      <div class="t2">YARBYS</div>
+      <div class="t3"><span class="resaltado">100%</span> en tu celular</div>
+      <div class="sub">Como el JARVIS de Iron Man, pero tuyo: funciona <b>sin internet</b>, lee tus documentos, recuerda tus conversaciones y te habla.</div>
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="insignias" id="insignias"></div>
+
+    <div class="celular">
+      <div class="pantalla">
+        <div class="isla"></div>
+        <div class="estado-tel"><span>9:41</span><span id="iconos-tel"></span></div>
+        <div class="app-top"><h3>YARBYS</h3><span class="modo" id="modo"></span></div>
+        <svg id="nucleo-app" width="230" height="230" viewBox="-115 -115 230 230"></svg>
+        <div class="estado-app">EN LÍNEA · GEMMA 4 LOCAL</div>
+        <div class="chat">
+          <div class="msg tu">¿Qué tengo el miércoles?</div>
+          <div class="msg ia">Tienes que entregar el proyecto de la tienda online antes de las 6 de la tarde.
+            <div class="fuente-doc" id="fuente"></div></div>
+          <div class="msg tu">¿Y cómo se llama mi perro?</div>
+        </div>
+        <div class="entrada"><div class="campo">Habla con YARBYS...</div><div class="mic" id="mic"></div></div>
+      </div>
+    </div>
+    <img class="logo" src="../marca/logo.png">
+  </div>
+  <script src="lib/iconos.js"></script>
+  <script>
+    const P = new URLSearchParams(location.search);
+    if (P.get("acento") === "rojo") document.body.classList.add("rojo");
+    const css = getComputedStyle(document.body);
+    const HUD = "#00cbff", ACENTO = P.get("acento") === "rojo" ? "#ff3c32" : "#fba905";
+    const NS = "http://www.w3.org/2000/svg";
+    const ico = (n, c = "") => `<span class="icono" style="${c ? "color:" + c : ""}">${ICONOS[n] || ""}</span>`;
+
+    // ---------- utilidades SVG
+    function el(padre, tag, attrs) {
+      const e = document.createElementNS(NS, tag);
+      for (const k in attrs) e.setAttribute(k, attrs[k]);
+      padre.appendChild(e);
+      return e;
+    }
+    function arco(cx, cy, r, a0, a1) {
+      const p = (a) => [cx + r * Math.cos((a - 90) * Math.PI / 180), cy + r * Math.sin((a - 90) * Math.PI / 180)];
+      const [x0, y0] = p(a0), [x1, y1] = p(a1);
+      return `M${x0} ${y0} A${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${x1} ${y1}`;
+    }
+    let semilla = 7;
+    const azar = () => (semilla = (semilla * 16807) % 2147483647) / 2147483647;
+
+    // ---------- HUD grande detrás del celular
+    function hudGrande(svg, cx, cy) {
+      el(svg, "circle", { cx, cy, r: 480, fill: "none", stroke: HUD, "stroke-opacity": .18, "stroke-width": 1.5 });
+      for (let i = 0; i < 180; i++) {          // marcas de medición
+        const a = i * 2, largo = i % 5 === 0 ? 18 : 8;
+        const r0 = 452, r1 = r0 - largo, rad = (a - 90) * Math.PI / 180;
+        el(svg, "line", { x1: cx + r0 * Math.cos(rad), y1: cy + r0 * Math.sin(rad), x2: cx + r1 * Math.cos(rad), y2: cy + r1 * Math.sin(rad),
+          stroke: HUD, "stroke-opacity": i % 5 === 0 ? .6 : .3, "stroke-width": 1.5 });
+      }
+      [[-40, 25, 6, HUD, .7], [35, 95, 6, HUD, .5], [150, 205, 6, ACENTO, .9], [220, 300, 6, HUD, .6], [310, 318, 6, ACENTO, .9]].forEach(
+        ([a0, a1, w, c, o]) => el(svg, "path", { d: arco(cx, cy, 412, a0, a1), fill: "none", stroke: c, "stroke-opacity": o, "stroke-width": w, "stroke-linecap": "butt" }));
+      el(svg, "circle", { cx, cy, r: 380, fill: "none", stroke: HUD, "stroke-opacity": .45, "stroke-width": 2, "stroke-dasharray": "2 10" });
+      [[100, 140], [250, 285]].forEach(([a0, a1]) => el(svg, "path", { d: arco(cx, cy, 350, a0, a1), fill: "none", stroke: HUD, "stroke-opacity": .22, "stroke-width": 18 }));
+      el(svg, "line", { x1: cx - 520, y1: cy, x2: cx - 300, y2: cy, stroke: HUD, "stroke-opacity": .35, "stroke-width": 1.5 });
+      el(svg, "line", { x1: cx + 300, y1: cy, x2: cx + 520, y2: cy, stroke: HUD, "stroke-opacity": .35, "stroke-width": 1.5 });
+      // etiquetas
+      [["NÚCLEO 98%", cx + 290, cy - 330, "start"], ["EMBEDDINGS 768D", cx - 300, cy - 330, "end"],
+       ["VECTORES 1.204", cx + 300, cy + 335, "start"], ["MEMORIA SQLITE", cx - 300, cy + 335, "end"]].forEach(([t, x, y, a]) => {
+        const e = el(svg, "text", { x, y, fill: HUD, "fill-opacity": .8, "font-family": "JetBrains Mono", "font-size": 16, "letter-spacing": 2, "text-anchor": a });
+        e.textContent = t;
+      });
+    }
+
+    // ---------- red de neuronas alrededor del celular
+    function neuronas(svg, cx, cy) {
+      const nodos = [];
+      while (nodos.length < 80) {
+        const a = azar() * Math.PI * 2, r = 230 + azar() * 230;
+        const x = cx + r * Math.cos(a) * 1.08, y = cy + r * Math.sin(a) * .95;
+        if (Math.abs(x - cx) < 240 && Math.abs(y - cy) < 440) continue;   // detrás del celular
+        nodos.push([x, y]);
+      }
+      nodos.forEach(([x, y], i) => {
+        const cerca = nodos.map(([u, v], j) => [Math.hypot(u - x, v - y), j]).sort((p, q) => p[0] - q[0]).slice(1, 4);
+        cerca.forEach(([d, j]) => { if (j > i && d < 170) el(svg, "line", { x1: x, y1: y, x2: nodos[j][0], y2: nodos[j][1], stroke: HUD, "stroke-opacity": .28, "stroke-width": 1.2 }); });
+      });
+      nodos.forEach(([x, y], i) => {
+        const activo = i % 9 === 0;
+        el(svg, "circle", { cx: x, cy: y, r: activo ? 6 : 3 + azar() * 2.5, fill: activo ? ACENTO : HUD, "fill-opacity": activo ? 1 : .8 });
+        if (activo) el(svg, "circle", { cx: x, cy: y, r: 13, fill: "none", stroke: ACENTO, "stroke-opacity": .6, "stroke-width": 1.5 });
+      });
+    }
+
+    // ---------- núcleo dentro de la app
+    function nucleoApp(svg) {
+      el(svg, "circle", { cx: 0, cy: 0, r: 108, fill: "none", stroke: HUD, "stroke-opacity": .25, "stroke-width": 1 });
+      for (let i = 0; i < 72; i++) {
+        const rad = (i * 5 - 90) * Math.PI / 180, r0 = 104, r1 = i % 6 === 0 ? 94 : 99;
+        el(svg, "line", { x1: r0 * Math.cos(rad), y1: r0 * Math.sin(rad), x2: r1 * Math.cos(rad), y2: r1 * Math.sin(rad), stroke: HUD, "stroke-opacity": .6, "stroke-width": 1.2 });
+      }
+      [[-30, 60, HUD], [90, 150, ACENTO], [180, 290, HUD]].forEach(([a0, a1, c]) => el(svg, "path", { d: arco(0, 0, 84, a0, a1), fill: "none", stroke: c, "stroke-width": 5 }));
+      el(svg, "circle", { cx: 0, cy: 0, r: 66, fill: "none", stroke: HUD, "stroke-opacity": .5, "stroke-width": 1.5, "stroke-dasharray": "2 6" });
+      const pts = [];
+      for (let i = 0; i < 16; i++) { const a = azar() * Math.PI * 2, r = 14 + azar() * 42; pts.push([r * Math.cos(a), r * Math.sin(a)]); }
+      pts.forEach(([x, y], i) => pts.forEach(([u, v], j) => { if (j > i && Math.hypot(u - x, v - y) < 36) el(svg, "line", { x1: x, y1: y, x2: u, y2: v, stroke: HUD, "stroke-opacity": .5, "stroke-width": 1 }); }));
+      pts.forEach(([x, y], i) => el(svg, "circle", { cx: x, cy: y, r: i % 5 === 0 ? 3.5 : 2.4, fill: i % 5 === 0 ? ACENTO : HUD }));
+      el(svg, "circle", { cx: 0, cy: 0, r: 12, fill: HUD });
+      el(svg, "circle", { cx: 0, cy: 0, r: 5, fill: "#fff" });
+    }
+
+    const svg = document.querySelector("#hud");
+    hudGrande(svg, 1425, 550);
+    neuronas(svg, 1425, 550);
+    nucleoApp(document.querySelector("#nucleo-app"));
+
+    document.querySelector("#k").innerHTML = ico("smartphone") + "Curso · IA en tu celular";
+    const chips = [["si_flutter", "Flutter", "#54c5f8"], ["brain", "Gemma 4", ACENTO], ["binary", "EmbeddingGemma", HUD],
+                   ["si_qdrant", "Qdrant Edge", "#ff3c32"], ["si_sqlite", "SQLite", "#4c9be8"]];
+    document.querySelector("#chips").innerHTML = chips.map(([i, t, c]) => `<span class="chip">${ico(i, c)}${t}</span>`).join("");
+    document.querySelector("#insignias").innerHTML =
+      `<span>${ico("si_android")}Android</span><span>${ico("si_apple")}iPhone</span><span>${ico("wifi-off")}Sin internet</span><span>${ico("code")}Código en GitHub</span>`;
+    document.querySelector("#iconos-tel").innerHTML = ico("plane") + " " + ico("battery-charging");
+    document.querySelector("#modo").innerHTML = ico("plane") + "OFFLINE";
+    document.querySelector("#fuente").innerHTML = ico("file-text") + "agenda.txt";
+    document.querySelector("#mic").innerHTML = ico("mic");
+    document.fonts.ready.then(() => (window.__listo = true));
+  </script>
+</body>
+</html>

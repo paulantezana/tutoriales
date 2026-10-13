@@ -1,0 +1,8 @@
+video/_partes/
+video/modelos/
+video/_voz/
+video/_cache_web/
+video/preview/
+video/narracion.wav
+__pycache__/
+video/escenas/_demos/
