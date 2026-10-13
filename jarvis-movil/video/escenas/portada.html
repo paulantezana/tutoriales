@@ -3,56 +3,7 @@
 <head>
   <meta charset="utf-8">
   <link rel="stylesheet" href="estilos.css">
-  <style>
-    /* ---------- formas decorativas planas ---------- */
-    .forma { position: absolute; }
-    .circulo-grande { width: 860px; height: 860px; border-radius: 50%; background: var(--forma); left: 1040px; top: 110px; }
-    .punto-amarillo { width: 54px; height: 54px; border-radius: 50%; background: var(--enfasis); left: 1150px; top: 170px; }
-    .cuadro-rojo { width: 40px; height: 40px; border-radius: 10px; background: var(--terciario); left: 1790px; top: 300px; transform: rotate(18deg); }
-    .anillo-celeste { width: 86px; height: 86px; border-radius: 50%; border: 12px solid var(--secundario); left: 1110px; top: 820px; }
-    .puntos { width: 150px; height: 110px; left: 1720px; top: 760px;
-      background-image: radial-gradient(var(--primario) 3px, transparent 3.5px); background-size: 25px 25px; opacity: .55; }
-    .barra-azul { width: 120px; height: 14px; border-radius: 7px; background: var(--primario); left: 140px; top: 958px; }
-
-    /* ---------- texto ---------- */
-    .izq { position: absolute; left: 140px; top: 120px; width: 900px; }
-    .t1 { font: 800 76px/1.05 "Open Sans"; margin: 34px 0 0; letter-spacing: -0.01em; }
-    .t2 { font: 800 150px/1.12 "Open Sans"; margin: 0 0 0 10px; color: var(--primario); letter-spacing: -0.02em; }
-    .t3 { font: 800 76px/1.1 "Open Sans"; margin: 22px 0 0; letter-spacing: -0.01em; }
-    .sub { font: 400 31px/1.45 "Lato"; color: var(--suave); margin-top: 30px; max-width: 840px; }
-    .chips { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 38px; max-width: 900px; }
-    .insignias { position: absolute; left: 140px; top: 1000px; display: flex; gap: 34px; font: 700 24px "Lato"; color: var(--suave); }
-    .insignias span { display: inline-flex; align-items: center; gap: 10px; }
-    .insignias .icono { width: 28px; height: 28px; color: var(--primario); }
-
-    /* ---------- celular ---------- */
-    .celular { position: absolute; left: 1235px; top: 120px; width: 440px; height: 880px;
-      border-radius: 64px; background: #15181b; padding: 16px; box-shadow: 0 30px 60px rgba(17, 37, 61, .22); }
-    .pantalla { width: 100%; height: 100%; border-radius: 50px; background: #0f1418; overflow: hidden; position: relative; color: #fff; }
-    .isla { position: absolute; left: 50%; top: 14px; width: 120px; height: 32px; border-radius: 16px; background: #000; transform: translateX(-50%); }
-    .estado-tel { display: flex; justify-content: space-between; padding: 18px 34px 0; font: 700 18px "Lato"; color: #e8eef3; }
-    .estado-tel .icono { width: 20px; height: 20px; }
-    .app-top { display: flex; align-items: center; justify-content: space-between; padding: 30px 26px 0; }
-    .app-top h3 { margin: 0; font: 800 28px "Open Sans"; letter-spacing: .16em; color: var(--secundario); }
-    .modo { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 999px;
-      background: rgba(31, 179, 106, .16); color: #4ade80; font: 700 16px "Lato"; }
-    .modo .icono { width: 18px; height: 18px; }
-    #nucleo-app { display: block; margin: 6px auto 0; overflow: visible; }
-    .estado-app { text-align: center; margin-top: 2px; font: 700 14px "JetBrains Mono"; letter-spacing: .18em; color: var(--secundario); }
-    .chat { padding: 26px 22px 0; display: flex; flex-direction: column; gap: 14px; }
-    .msg { max-width: 82%; padding: 14px 18px; border-radius: 20px; font: 400 19px/1.4 "Lato"; }
-    .msg.tu { align-self: flex-end; background: var(--primario); border-bottom-right-radius: 6px; }
-    .msg.ia { background: #1f272e; border: 1px solid #2c3a45; border-bottom-left-radius: 6px; }
-    .fuente-doc { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; font: 700 14px "Lato"; color: var(--enfasis); }
-    .fuente-doc .icono { width: 15px; height: 15px; }
-    .entrada { position: absolute; left: 18px; right: 18px; bottom: 26px; display: flex; gap: 10px; align-items: center; }
-    .campo { flex: 1; height: 58px; border-radius: 29px; background: #1f272e; border: 1px solid #2c3a45;
-      display: flex; align-items: center; padding: 0 22px; font: 400 18px "Lato"; color: #8a9aa8; }
-    .mic { width: 58px; height: 58px; border-radius: 50%; background: var(--primario); display: grid; place-items: center; }
-    .mic .icono { width: 26px; height: 26px; color: #fff; }
-
-    .logo { position: absolute; right: 28px; bottom: 22px; width: 84px; height: 84px; }
-  </style>
+  <link rel="stylesheet" href="portada.css">
 </head>
 <body>
   <div id="escena">

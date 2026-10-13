@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <!-- Réplica visual de la app Flutter (lib/) para las demos del video.
+       Se maneja en "tiempo virtual" con una lista de eventos (escenas/_demos/<id>.js). -->
+  <link rel="stylesheet" href="estilos.css">
+  <style>
+    :root { --s-fondo: #0f1418; --s-sup: #1f272e; --s-borde: #2c3a45; --s-suave: #8a9aa8; }
+    .forma { position: absolute; }
+    #circulo { width: 900px; height: 900px; border-radius: 50%; background: var(--forma); left: 120px; top: 90px; }
+    #tel { position: absolute; left: 330px; top: 40px; width: 500px; height: 1000px; border-radius: 70px; background: #15181b; padding: 16px; }
+    #pantalla { position: relative; width: 468px; height: 968px; border-radius: 56px; background: var(--s-fondo); overflow: hidden; color: #fff; font-family: Lato; }
+    #isla { position: absolute; left: 50%; top: 12px; width: 120px; height: 32px; border-radius: 16px; background: #000; transform: translateX(-50%); z-index: 50; }
+    .icono svg { width: 100%; height: 100%; }
+    .i { display: inline-grid; place-items: center; }
+    .i svg { width: 100%; height: 100%; }
+    /* barra de estado */
+    #estado { position: absolute; left: 0; right: 0; top: 0; height: 52px; display: flex; justify-content: space-between; align-items: center; padding: 6px 36px 0; font: 700 18px Lato; color: #e8eef3; z-index: 40; }
+    #estado .der { display: flex; gap: 8px; align-items: center; }
+    .capa { position: absolute; left: 0; top: 0; width: 468px; height: 968px; background: var(--s-fondo); }
+    /* barra superior */
+    .barra { position: absolute; left: 0; right: 0; top: 52px; height: 66px; display: flex; align-items: center; padding: 0 10px 0 14px; gap: 6px; }
+    .barra .tit { font: 800 25px "Open Sans"; letter-spacing: 4px; color: var(--secundario); margin-left: 8px; flex: 1; }
+    .barra .tit2 { font: 600 24px "Open Sans"; color: #fff; margin-left: 10px; flex: 1; }
+    .btn-i { width: 44px; height: 44px; display: grid; place-items: center; color: #e8eef3; }
+    .pildora { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 99px; font: 700 15px Lato; white-space: nowrap; }
+    /* chat */
+    #etiqueta-modelo { position: absolute; left: 0; right: 0; text-align: center; font: 700 14px "JetBrains Mono"; letter-spacing: 2px; color: var(--secundario); }
+    #lista { position: absolute; left: 0; right: 0; overflow: hidden; }
+    #lista-int { position: absolute; left: 0; right: 0; top: 0; padding: 16px 18px 6px; display: flex; flex-direction: column; gap: 14px; }
+    .msg { max-width: 80%; padding: 13px 17px; border-radius: 22px; font: 400 19px/1.42 Lato; }
+    .msg.u { align-self: flex-end; background: var(--primario); border-bottom-right-radius: 6px; }
+    .msg.y { align-self: flex-start; background: var(--s-sup); border: 1px solid var(--s-borde); border-bottom-left-radius: 6px; }
+    .fuente { display: flex; align-items: center; gap: 6px; margin-top: 8px; font: 700 15px Lato; color: var(--enfasis); }
+    .spin { width: 24px; height: 24px; border-radius: 50%; border: 3px solid var(--s-borde); border-top-color: var(--secundario); }
+    #vacio { position: absolute; left: 30px; right: 30px; text-align: center; color: var(--s-suave); font: 400 18px/1.5 Lato; }
+    #entrada { position: absolute; left: 14px; right: 14px; bottom: 22px; display: flex; gap: 10px; align-items: center; }
+    #campo { flex: 1; height: 60px; border-radius: 30px; background: var(--s-sup); border: 1px solid var(--s-borde); display: flex; align-items: center; padding: 0 22px; font: 400 19px Lato; color: #fff; white-space: nowrap; overflow: hidden; }
+    #campo.vacio { color: var(--s-suave); }
+    #boton { width: 60px; height: 60px; border-radius: 50%; background: var(--primario); display: grid; place-items: center; color: #fff; flex: none; }
+    #canvas-nucleo { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+    /* inicio */
+    .tarjeta-d { border-radius: 18px; background: var(--s-sup); border: 1px solid var(--s-borde); padding: 16px 18px; }
+    .barra-p { height: 7px; border-radius: 4px; background: var(--s-borde); margin-top: 14px; overflow: hidden; }
+    .barra-p span { display: block; height: 100%; border-radius: 4px; }
+    .boton-g { height: 60px; border-radius: 30px; background: var(--primario); display: flex; align-items: center; justify-content: center; gap: 10px; font: 700 19px Lato; }
+    /* documentos */
+    .doc { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 16px; background: var(--s-sup); border: 1px solid var(--s-borde); margin-top: 12px; }
+    .fab { position: absolute; right: 18px; display: flex; align-items: center; gap: 10px; padding: 0 22px; height: 58px; border-radius: 18px; font: 700 18px Lato; }
+    /* overlays */
+    #drawer-fondo { position: absolute; inset: 0; background: rgba(0, 0, 0, .55); z-index: 20; }
+    #drawer { position: absolute; left: 0; top: 0; bottom: 0; width: 360px; background: var(--s-fondo); z-index: 21; padding: 70px 0 0; border-right: 1px solid var(--s-borde); }
+    .item-d { display: flex; align-items: center; gap: 16px; padding: 15px 22px; font: 400 18px Lato; }
+    #snack { position: absolute; left: 14px; right: 14px; bottom: 100px; padding: 16px 18px; border-radius: 10px; background: #e8eef3; color: #1b1f23; font: 400 17px Lato; z-index: 30; }
+    #sombra { position: absolute; left: 0; right: 0; top: 0; height: 420px; background: #1b2026; z-index: 35; padding: 70px 22px 0; border-bottom-left-radius: 34px; border-bottom-right-radius: 34px; }
+    .mosaico { display: inline-flex; flex-direction: column; justify-content: center; gap: 4px; width: 200px; height: 84px; border-radius: 26px; padding: 0 20px; margin: 0 8px 14px 0; font: 700 17px Lato; vertical-align: top; }
+    #picker { position: absolute; left: 0; right: 0; bottom: 0; height: 470px; background: #1b2026; z-index: 32; border-top-left-radius: 30px; border-top-right-radius: 30px; padding: 26px 22px; }
+    #picker-fondo { position: absolute; inset: 0; background: rgba(0, 0, 0, .55); z-index: 31; }
+    .archivo { display: flex; align-items: center; gap: 14px; padding: 14px 10px; font: 400 19px Lato; border-bottom: 1px solid var(--s-borde); }
+    #toque { position: absolute; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: rgba(255, 255, 255, .28); border: 3px solid rgba(255, 255, 255, .7); z-index: 60; pointer-events: none; }
+    /* ajustes */
+    .titulo-a { font: 800 15px "Open Sans"; letter-spacing: 2px; color: var(--secundario); margin: 0 0 12px; }
+    .seg { display: flex; border: 1px solid #5b6670; border-radius: 22px; overflow: hidden; }
+    .seg span { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; height: 46px; font: 600 16px Lato; }
+    .seg span + span { border-left: 1px solid #5b6670; }
+    .seg .on { background: #23415a; }
+    .campo-a { margin-top: 12px; height: 60px; border-radius: 30px; background: var(--s-sup); border: 1px solid var(--s-borde); padding: 0 20px; display: flex; flex-direction: column; justify-content: center; }
+    .campo-a small { font: 400 13px Lato; color: var(--s-suave); }
+    /* panel de la derecha */
+    #der { position: absolute; left: 930px; top: 110px; width: 860px; }
+    #der h1 { font: 800 64px/1.1 "Open Sans"; margin: 22px 0 0; letter-spacing: -0.01em; }
+    #der h1 .acento { color: var(--secundario); }
+    #notas { margin-top: 40px; display: grid; gap: 18px; }
+    .nota { display: flex; align-items: center; gap: 20px; padding: 22px 26px; border-radius: 22px; background: var(--superficie); border: 2px solid var(--borde); font: 400 27px/1.35 Lato; }
+    .nota .cuadro { width: 64px; height: 64px; border-radius: 16px; display: grid; place-items: center; flex: none; }
+  </style>
+</head>
+<body class="oscuro">
+  <div id="escena">
+    <div class="forma" id="circulo"></div>
+    <div class="forma" style="width:46px;height:46px;border-radius:50%;background:var(--enfasis);left:250px;top:170px"></div>
+    <div class="forma" style="width:36px;height:36px;border-radius:9px;background:var(--terciario);left:880px;top:880px;transform:rotate(18deg)"></div>
+    <div class="forma" style="width:74px;height:74px;border-radius:50%;border:11px solid var(--secundario);left:200px;top:820px"></div>
+    <div id="tel"><div id="pantalla">
+      <div id="isla"></div>
+      <div id="estado"><span id="hora">9:41</span><span class="der" id="iconos-estado"></span></div>
+      <div id="capas"></div>
+      <canvas id="canvas-nucleo" width="600" height="600"></canvas>
+      <div id="overlays"></div>
+      <div id="toque"></div>
+    </div></div>
+    <div id="der"><span class="kicker" id="kicker"></span><h1 id="titulo"></h1><div id="notas"></div></div>
+  </div>
+  <script src="lib/iconos.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

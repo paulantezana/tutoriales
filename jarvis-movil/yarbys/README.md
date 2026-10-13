@@ -23,6 +23,8 @@ Cada cambio en esta carpeta compila el APK en GitHub Actions (`.github/workflows
 
 Si publicas un **Release** en GitHub, el workflow le adjunta el APK, que así es más fácil de descargar desde el celular.
 
+El APK pesa unos 85 MB; los modelos se descargan dentro de la app.
+
 **Requisitos del celular:** Android 11 o superior, procesador de 64 bits (arm64) y, de preferencia, 8 GB de RAM. Con 6 GB funciona, pero más lento.
 
 ## Compilar en Windows

@@ -92,3 +92,40 @@ h1, h2, h3, .titulo { font-family: "Open Sans", sans-serif; }
   content: ""; position: absolute; left: -6px; right: -6px; bottom: 6px; height: 34%;
   background: var(--enfasis); z-index: -1; border-radius: 6px;
 }
+
+/* ================= Componentes de las escenas del video ================= */
+.cabecera { position: absolute; left: 140px; top: 86px; width: 1640px; }
+h1.titulo {
+  margin: 22px 0 0; font: 800 76px/1.08 "Open Sans"; letter-spacing: -0.015em;
+}
+h1.titulo .acento { color: var(--secundario); }
+h1.titulo .amarillo { color: var(--enfasis); }
+.linea-titulo { overflow: hidden; display: block; padding-bottom: 4px; }
+.subtitulo { margin-top: 12px; font: 400 30px "Lato"; color: var(--suave); }
+
+.panel {
+  position: absolute; background: var(--superficie); border: 2px solid var(--borde); border-radius: 26px;
+}
+.panel-titulo {
+  display: flex; align-items: center; gap: 14px; font: 800 30px "Open Sans";
+}
+.panel-titulo .icono { width: 34px; height: 34px; }
+.etiqueta { font: 700 20px "Lato"; color: var(--suave); text-transform: uppercase; letter-spacing: .12em; }
+.pastilla {
+  display: inline-flex; align-items: center; gap: 12px;
+  padding: 14px 24px; border-radius: 999px;
+  background: var(--superficie); border: 2px solid var(--borde);
+  font: 700 26px "Lato"; white-space: nowrap;
+}
+.pastilla .icono { width: 30px; height: 30px; }
+.cuadro-icono { border-radius: 18px; display: grid; place-items: center; flex: none; }
+.mono { font-family: "JetBrains Mono", monospace; }
+.codigo {
+  font: 400 24px/1.55 "JetBrains Mono"; background: #1e2327; border: 2px solid var(--borde);
+  border-radius: 18px; padding: 22px 26px; white-space: pre; color: #d4d4d4;
+}
+.burbuja { padding: 16px 22px; border-radius: 22px; font: 400 25px/1.4 "Lato"; max-width: 520px; }
+.burbuja.tu { background: var(--primario); border-bottom-right-radius: 6px; color: #fff; }
+.burbuja.ia { background: #1f272e; border: 2px solid #2c3a45; border-bottom-left-radius: 6px; }
+.fila { display: flex; align-items: center; }
+.ok { color: var(--verde); }
