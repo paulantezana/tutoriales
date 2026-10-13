@@ -1,3 +1,4 @@
 video/preview/
 .env
 __pycache__/
+video/_partes/

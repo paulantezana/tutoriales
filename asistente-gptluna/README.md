@@ -30,12 +30,17 @@ python app.py               # Enter = hilo nuevo; pega un ID para retomar un hil
 
 ## Video tutorial (`video/`)
 
-- `tutorial.mp4`: video 1080p de unos 5 minutos, con subtítulos incrustados y sin voz (pista de audio silenciosa).
-- `guion.md`: guion de narración con tiempos, para grabar tu voz encima, más los capítulos para la descripción de YouTube.
+Clase de unos 20 minutos para principiantes, que simula a una persona programando en **VS Code**: explorador de archivos, pestañas, autocompletado, algún error de tipeo corregido, `Ctrl + S`, terminal integrada y mouse. Cada bloque de código se selecciona y se explica con una nota en pantalla.
+
+- `tutorial.mp4`: video 1080p con subtítulos incrustados y sin voz (pista de audio silenciosa).
+- `guion.md`: guion de narración con tiempos para grabar tu voz, más los capítulos para la descripción de YouTube.
 - `subtitulos.srt`: subtítulos para subir a YouTube.
-- `render.py`: genera todo lo anterior. Lee el código desde `codigo/`, así que si cambias el código, vuelve a renderizar.
+- `render.py`: genera todo lo anterior. Lee el código desde `codigo/`, así que si cambias el código vuelves a renderizar.
+
+Para adaptar el video al estilo de tu canal, edita las variables `CANAL`, `CURSO`, `CLASE`, `MARCA` y `MARCA2` al inicio de `render.py`. Si grabas tu voz, puedes quitar los subtítulos incrustados con `SUBTITULOS = False`.
 
 ```bash
 pip install pillow pygments     # y ffmpeg instalado
-python video/render.py           # o --preview para ver un PNG por escena
+python video/render.py           # usa todos los núcleos de la CPU
+python video/render.py --preview 15   # una captura PNG cada 15 segundos
 ```

@@ -42,8 +42,15 @@ def obtener_historial(session_id: str):
     return PostgresChatMessageHistory(TABLA, session_id, sync_connection=conn)
 
 # --- Prompt y cadena RAG ---
+SISTEMA = """Eres un asistente amable de atención al cliente.
+Responde solo con la información del contexto.
+Si no encuentras la respuesta, dilo con honestidad.
+
+Contexto:
+{context}"""
+
 prompt = ChatPromptTemplate.from_messages([
-    ("system", "Eres un asistente amable. Responde usando este contexto:\n{context}"),
+    ("system", SISTEMA),
     MessagesPlaceholder("history"),
     ("human", "{question}"),
 ])
