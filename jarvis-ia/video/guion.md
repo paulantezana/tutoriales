@@ -1,162 +1,212 @@
 # Guion de narración
 
 Lee cada frase en voz alta en el momento indicado. Los tiempos coinciden con `tutorial.mp4`.
-El video ya trae esta narración con voz generada (Kokoro). Si prefieres grabar tu propia voz, pon `NARRACION = False` en `render.py` y usa estos tiempos.
+El video ya trae esta narración con voz generada (Kokoro). Si prefieres grabar tu propia voz, pon `NARRACION = False` en `render.py` y graba siguiendo estos tiempos.
 
 
 ## Introducción
 
-- **0:00** — Hola, ¿qué tal? Bienvenidos a este curso, donde vamos a crear nuestro propio asistente de inteligencia artificial.
-- **0:07** — No te preocupes si nunca has trabajado con IA: voy a explicar cada concepto y cada línea de código, paso a paso.
+- **0:00** — Hola, ¿qué tal? Bienvenidos. Hoy vamos a crear nuestro propio JARVIS: un asistente personal con inteligencia artificial.
+- **0:07** — Conoce tu información, recuerda lo que conversan y te responde con voz, desde una página web.
+- **0:13** — Y lo haremos en Windows, sin Docker, paso a paso y explicando cada línea de código.
 
 ## Resultado final
 
-- **0:15** — Antes de empezar, mira lo que vamos a tener al terminar este video.
-- **0:35** — Es un asistente que responde usando la información de NUESTROS documentos, en este caso de una cafetería.
-- **0:41** — Y además recuerda la conversación: fíjate que en la segunda pregunta no repetí de qué estábamos hablando.
+- **0:21** — Antes de empezar, mira el resultado final. Le pregunto a JARVIS qué tengo el miércoles.
+- **0:38** — Sabe lo que tengo en mi agenda porque lee mis documentos, y me responde con voz.
+- **0:53** — Y recuerda la conversación: en la segunda pregunta no tuve que explicarle nada más.
 
-## Conceptos básicos
+## Las 5 piezas
 
-- **0:49** — Primero, unos conceptos rápidos. Un LLM, o modelo de lenguaje, es una inteligencia artificial que entiende y escribe texto, como ChatGPT.
-- **0:59** — Funciona así: le enviamos un mensaje, y nos responde con otro texto. En este curso usaremos GptLuna como nuestro LLM.
-- **1:07** — Pero hay un problema: el LLM no conoce la información de TU negocio. No sabe tus horarios, tus precios ni tus productos.
-- **1:16** — Para resolverlo usamos embeddings. Un embedding convierte un texto en una lista de números.
-- **1:21** — Lo interesante es que textos con significado parecido quedan con números parecidos, es decir, quedan 'cerca' en este mapa.
-- **1:29** — Por ejemplo, 'horario de atención' queda cerca de '¿a qué hora abren?', aunque usen palabras distintas.
-- **1:35** — Estos números los va a generar Ollama, un programa gratuito que corre en tu propia computadora.
-- **1:42** — Esos vectores los guardamos en una base de datos vectorial. Nosotros usaremos Qdrant.
-- **1:47** — Cuando llega una pregunta, Qdrant la compara con todos los textos guardados y nos devuelve los más parecidos, con un puntaje.
-- **1:56** — Juntando todo tenemos lo que se conoce como RAG. Suena complicado, pero son solo cuatro pasos.
-- **2:03** — Llega la pregunta, buscamos la información relevante en Qdrant, la añadimos a la pregunta, y el LLM genera la respuesta.
-- **2:11** — Así el asistente responde con datos reales de tu negocio, y no se inventa cosas.
-- **2:17** — El último concepto es la memoria. Si pregunto '¿y cuánto cuesta el delivery?', el asistente necesita recordar de qué hablábamos.
-- **2:25** — Por eso guardaremos cada conversación, a la que llamaremos 'hilo', en una base de datos PostgreSQL.
-- **2:32** — Este es el plan completo. Vamos a escribir dos programas en Python.
-- **2:37** — El primero, ingest.py, lee nuestros documentos, los convierte en vectores con Ollama y los guarda en Qdrant. Solo se ejecuta una vez.
-- **2:45** — El segundo, app.py, es el chat: busca el contexto en Qdrant, lee el historial en PostgreSQL y le pregunta a GptLuna.
-- **2:53** — Y para unir todas estas piezas usaremos LangChain, una librería de Python hecha justamente para esto.
-- **3:01** — Para seguir el tutorial necesitas tener instalado Python, Docker y Visual Studio Code.
-- **3:07** — Y una API key de GptLuna, que es la clave que nos permite usar su modelo.
+- **0:59** — Para construir a JARVIS necesitamos cinco piezas, y te voy a explicar cada una con calma.
+- **1:05** — Un cerebro, que es el modelo de lenguaje, y un traductor de textos a números, que son los embeddings.
+- **1:11** — Una base de datos vectorial para buscar información, y una memoria para recordar las conversaciones.
+- **1:17** — Y una página web para hablar con él. LangChain será el pegamento que une todas las piezas.
 
-## Paso 1 · Docker
+## ¿Qué es un LLM?
 
-- **3:13** — Bien, ¡manos a la obra! Abrí en Visual Studio Code una carpeta vacía llamada 'asistente'.
-- **3:19** — Lo primero es levantar los tres servicios que necesitamos: Qdrant, PostgreSQL y Ollama.
-- **3:24** — Para no instalarlos uno por uno, usaremos Docker. Creamos un archivo llamado docker-compose.yml.
-- **3:38** — Dentro de 'services' definimos cada servicio. El primero es Qdrant.
-- **3:42** — 'image' es el programa que Docker va a descargar, y 'ports' es el puerto por el que nos vamos a conectar: el 6333.
-- **3:51** — El volumen sirve para que los datos no se borren cuando apaguemos el contenedor.
-- **4:12** — Ahora PostgreSQL. Con 'environment' le decimos el usuario, la contraseña y el nombre de la base de datos.
-- **4:18** — Recuerda estos datos, porque los usaremos más adelante para conectarnos.
-- **4:32** — Y por último Ollama, en el puerto 11434. Él se encargará de generar los embeddings.
-- **4:43** — Al final declaramos los tres volúmenes. Guardamos con Control + S.
-- **4:47** — Ahora abrimos la terminal integrada de VS Code con Control + comilla invertida.
-- **4:53** — Y escribimos 'docker compose up -d'. La '-d' hace que los servicios corran en segundo plano.
-- **4:59** — La primera vez tarda un poco, porque Docker descarga las imágenes. Listo, los tres servicios están corriendo.
-- **5:05** — Ahora descargamos dentro de Ollama el modelo que genera los embeddings: nomic-embed-text.
+- **1:24** — Empecemos por el cerebro: el LLM, o modelo de lenguaje. Es una inteligencia artificial que entiende y escribe texto.
+- **1:32** — Funciona así: le envías un mensaje, lo divide en pequeños pedazos llamados tokens, y genera la respuesta token por token.
+- **1:39** — ChatGPT, Claude, Gemini o DeepSeek usan LLMs. Pero hay decenas de modelos, cada uno con distinta inteligencia y precio.
+
+## Comparativa de LLMs
+
+- **1:49** — ¿Y cómo elegimos uno? Yo uso Artificial Analysis, una página independiente que compara los modelos de IA por inteligencia, velocidad y precio.
+- **1:58** — En este gráfico, más arriba significa más inteligente, y más a la derecha, más caro. El precio es en dólares por millón de tokens de salida.
+- **2:07** — Arriba están los más potentes, como Claude Opus 5.5, Claude Sonnet 5.5 o Gemini 4 Argon. Son muy inteligentes, pero cuestan entre 10 y 20 dólares por millón de tokens.
+- **2:19** — Y aquí abajo, a la izquierda, está GPT-6 Luna, al que llamamos GptLuna: tiene 38 puntos y cuesta solo 50 centavos. ¡Unas 40 veces más barato que Opus!
+- **2:30** — En la misma zona está Claude Haiku 5.5, con el mismo precio y algo más de inteligencia. También sería una gran opción.
+- **2:38** — Para un asistente personal que responde preguntas del día a día no necesitamos el modelo más caro. GptLuna nos da una excelente relación entre precio e inteligencia.
+
+## Embeddings
+
+- **2:50** — Ahora, ¿cómo encuentra JARVIS la información correcta dentro de tus documentos? Con embeddings.
+- **2:56** — Un embedding convierte un texto en una lista de números, llamada vector. bge-m3, por ejemplo, genera 1024 números por cada texto.
+- **3:05** — Lo genial es que los textos con significado parecido quedan cerca. '¿Qué tengo el miércoles?' queda junto a 'Miércoles: entregar el proyecto', aunque usen palabras distintas.
+- **3:15** — Hay varios modelos de embeddings. OpenAI tiene text-embedding-3-small, que cuesta 2 centavos por millón de tokens, y uno más grande y preciso. También está nomic-embed-text, que corre en tu PC.
+- **3:26** — Nosotros usaremos bge-m3 con Ollama: es gratis, funciona sin internet en tu computadora y entiende más de 100 idiomas, incluido el español.
+
+## Qdrant
+
+- **3:37** — Esos vectores los guardamos en Qdrant, una base de datos vectorial. Es como una biblioteca que ordena los textos por su significado.
+- **3:45** — Cuando haces una pregunta, Qdrant la compara con todos los fragmentos guardados y te devuelve los más parecidos, con un puntaje.
+- **3:53** — Y lo mejor: Qdrant tiene una versión para Windows. Solo descargas un archivo y lo ejecutas.
+
+## RAG
+
+- **4:00** — Juntando estas piezas tenemos la técnica más usada para crear asistentes con IA: RAG.
+- **4:06** — Primero llega tu pregunta. Luego buscamos en Qdrant la información relevante.
+- **4:11** — Después la añadimos al mensaje, junto con tu pregunta. Y finalmente el LLM genera la respuesta.
+- **4:18** — Así JARVIS responde con TUS datos reales, y no se inventa cosas.
+
+## Memoria
+
+- **4:24** — La última pieza es la memoria. Un LLM, por sí solo, no recuerda nada: cada mensaje es como hablar con alguien que te acaba de conocer.
+- **4:33** — Si le pregunto '¿y cómo se llama mi perro?' después de hablar de mi agenda, necesita saber de qué estábamos hablando.
+- **4:39** — Por eso guardamos cada conversación, a la que llamamos 'hilo', en PostgreSQL. Y en cada pregunta le enviamos los últimos mensajes.
+- **4:47** — PostgreSQL también tiene instalador oficial para Windows, así que tampoco necesitamos Docker.
+
+## Arquitectura
+
+- **4:54** — Este es el plan completo. Tú hablas con JARVIS desde una página web, en tu navegador.
+- **5:00** — La página le envía tu mensaje a nuestro servidor en Python, hecho con FastAPI, que se lo pasa a asistente.py.
+- **5:07** — Ahí buscamos el contexto en Qdrant, con la ayuda de Ollama, y leemos el historial en PostgreSQL.
+- **5:13** — Luego le preguntamos a GptLuna, guardamos la respuesta en la memoria, y la página la lee en voz alta.
+
+## Instalación en Windows
+
+- **5:21** — Pasemos a la instalación. Todo funciona directamente en Windows, sin Docker y sin WSL.
+- **5:27** — Primero, Python, desde python.org. Muy importante: en el instalador marca la casilla 'Add python.exe to PATH'.
+- **5:35** — Segundo, Ollama, desde ollama.com. Se instala como cualquier programa y queda funcionando en segundo plano.
+- **5:42** — Tercero, Qdrant. En su página de GitHub, en la sección Releases, descarga el archivo .zip para Windows y descomprímelo, por ejemplo, en C:\qdrant.
+- **5:52** — Cuarto, PostgreSQL, con el instalador para Windows de su página oficial. Te pedirá una contraseña para el usuario postgres: anótala, la usaremos después.
+- **6:01** — Y por último, tu API key de OpenAI, desde platform.openai.com, para poder usar GptLuna.
+
+## Paso 1 · Servicios
+
+- **6:09** — Con todo instalado, abrimos Visual Studio Code. Creé una carpeta llamada jarvis en C:\proyectos, y la abrí con File, Open Folder.
+- **6:18** — Abrimos la terminal con Control + comilla invertida. En Windows, VS Code usa PowerShell.
+- **6:24** — Primero descargamos el modelo de embeddings con Ollama: ollama pull bge-m3.
+- **6:31** — Ahora encendemos Qdrant. Abro una segunda terminal con Control + Shift + comilla invertida, y ejecuto el programa que descomprimimos en C:\qdrant.
+- **6:40** — Qdrant ya está funcionando en el puerto 6333. Deja esta terminal abierta mientras trabajas.
 
 ## Paso 2 · Entorno Python
 
-- **5:15** — Ahora preparamos Python. Primero creamos un entorno virtual: una carpeta donde se instalan las librerías solo para este proyecto.
-- **5:23** — Mira, en el explorador apareció la carpeta .venv.
-- **5:27** — Lo activamos. En Windows el comando es '.venv\Scripts\activate'.
-- **5:32** — Fíjate que ahora la terminal muestra '(.venv)' al inicio: eso significa que el entorno está activo.
-- **5:39** — Ahora creamos el archivo requirements.txt, con la lista de librerías que vamos a necesitar.
-- **5:57** — 'langchain' es la librería principal que une todas las piezas.
-- **6:01** — Cada 'langchain-algo' es una integración: openai para hablar con GptLuna, ollama para los embeddings, y qdrant y postgres para las bases de datos.
-- **6:12** — text-splitters sirve para cortar textos largos, psycopg conecta Python con PostgreSQL, y python-dotenv lee nuestra configuración.
-- **6:21** — Las instalamos con 'pip install -r requirements.txt'.
-- **6:28** — ¡Perfecto! Ya tenemos todo instalado.
+- **6:48** — Volvemos a la primera terminal y creamos un entorno virtual: una carpeta donde se instalan las librerías solo para este proyecto.
+- **6:56** — Lo activamos con .venv\Scripts\activate.
+- **7:00** — Fíjate que ahora aparece '(.venv)' en verde al inicio. Eso significa que el entorno está activo.
+- **7:07** — Si Windows te muestra un error de permisos al activarlo, ejecuta una sola vez: Set-ExecutionPolicy -Scope CurrentUser RemoteSigned.
+- **7:15** — Ahora creamos el archivo requirements.txt, con las librerías que vamos a necesitar.
+- **7:34** — langchain es la librería principal. Cada 'langchain-algo' es una integración: openai para GptLuna, ollama para los embeddings, y qdrant y postgres para las bases de datos.
+- **7:46** — psycopg conecta Python con PostgreSQL, python-dotenv lee nuestra configuración, y fastapi con uvicorn nos permiten crear el servidor web.
+- **7:56** — Las instalamos con pip install -r requirements.txt.
 
 ## Paso 3 · Configuración
 
-- **6:31** — Ahora la configuración. Creamos un archivo llamado .env: aquí van las claves y direcciones, separadas del código.
-- **6:45** — GptLuna funciona igual que la API de OpenAI, así que solo necesitamos tres datos: la URL, la API key y el nombre del modelo.
-- **6:53** — Revisa los valores exactos en el panel de tu cuenta de GptLuna, y reemplaza 'tu_api_key' por tu clave.
-- **7:21** — Debajo van las direcciones de los servicios que levantamos con Docker, con los mismos puertos.
-- **7:27** — Fíjate que en PG_URL aparecen el usuario, la contraseña y la base de datos que definimos en docker-compose.
-- **7:36** — Un consejo importante: este archivo tiene tu clave secreta. ¡Nunca lo subas a GitHub!
+- **8:03** — Ahora la configuración. Creamos un archivo llamado .env, donde van las claves y direcciones, separadas del código.
+- **8:12** — Primero, tu API key de OpenAI y el nombre del modelo: gpt-6-luna. Reemplaza el texto de ejemplo por tu clave real.
+- **8:35** — Después las direcciones de Ollama y de Qdrant, con el modelo bge-m3 y el nombre de nuestra colección: jarvis.
+- **8:51** — Y la conexión a PostgreSQL. Aquí va la contraseña que elegiste al instalarlo. Usamos la base de datos que viene por defecto, llamada postgres, así no tenemos que crear nada.
+- **9:03** — Un consejo importante: este archivo tiene tu clave secreta. ¡Nunca lo subas a GitHub!
 
-## Paso 4 · Documentos
+## Paso 4 · Tus documentos
 
-- **7:41** — Ahora necesitamos los documentos que el asistente va a 'leer'. Creamos una carpeta docs con un archivo empresa.txt.
-- **8:00** — Como ejemplo, uso la información de una cafetería imaginaria: Luna Café. Su horario, su producto estrella, el delivery y el contacto.
-- **8:08** — Tú aquí puedes poner la información de tu negocio, tus manuales o tus preguntas frecuentes.
+- **9:09** — Ahora, la información que JARVIS va a conocer. Creamos la carpeta docs con un archivo perfil.txt.
+- **9:29** — Y otro archivo con mi agenda de la semana. Este lo pego para ir más rápido.
+- **9:34** — Tú puedes poner aquí lo que quieras: tus notas, tus proyectos, tus contactos. Mientras más información, más útil será JARVIS.
 
 ## Paso 5 · ingest.py
 
-- **8:14** — Ahora sí, nuestro primer programa: ingest.py. Su trabajo es leer los documentos, convertirlos en vectores y guardarlos en Qdrant.
-- **8:36** — Empezamos importando lo que vamos a usar. 'os' nos permite leer variables de configuración, y 'Path' trabajar con archivos.
-- **8:43** — De LangChain traemos Document, el cortador de textos, los embeddings de Ollama y la conexión con Qdrant.
-- **8:52** — load_dotenv() lee el archivo .env, para que podamos usar esas variables en el código.
-- **9:11** — Aquí recorremos todos los archivos .txt de la carpeta docs.
-- **9:15** — Por cada archivo creamos un Document de LangChain: page_content es el texto, y en metadata guardamos el nombre del archivo.
-- **9:35** — Los documentos largos se cortan en fragmentos de 500 caracteres. Así, luego buscamos solo el pedazo que importa.
-- **9:43** — chunk_overlap repite 50 caracteres entre un fragmento y el siguiente, para no cortar una idea por la mitad.
-- **10:01** — Creamos el generador de embeddings con Ollama. Con os.getenv leemos el modelo y la dirección desde el archivo .env.
-- **10:21** — Y aquí la magia: from_documents toma cada fragmento, le pide a Ollama su vector, y guarda todo en la colección de Qdrant.
-- **10:35** — Al final mostramos un mensaje con cuántos fragmentos se guardaron. Guardamos el archivo.
-- **10:40** — Vamos a ejecutarlo en la terminal: python ingest.py.
-- **10:44** — ¡Funciona! Como nuestro documento es corto, quedó en un solo fragmento. Ya está guardado en Qdrant.
+- **9:42** — Nuestro primer programa es ingest.py. Su trabajo es leer los documentos, convertirlos en vectores y guardarlos en Qdrant.
+- **10:04** — Empezamos importando lo que vamos a usar: os para leer la configuración, Path para buscar archivos, y las piezas de LangChain.
+- **10:14** — load_dotenv lee el archivo .env, para poder usar esas variables en el código.
+- **10:33** — Recorremos todos los archivos .txt de la carpeta docs, y por cada uno creamos un Document de LangChain, con su texto y el nombre del archivo.
+- **10:54** — Los documentos largos se cortan en fragmentos de 500 caracteres, repitiendo 50 entre uno y otro para no cortar una idea por la mitad.
+- **11:15** — Creamos el generador de embeddings con Ollama. Con os.getenv leemos el modelo, bge-m3, y la dirección desde el archivo .env.
+- **11:39** — Y from_documents hace la magia: le pide a Ollama el vector de cada fragmento y guarda todo en la colección de Qdrant.
+- **11:53** — Lo ejecutamos: python ingest.py.
+- **11:57** — ¡Funciona! Se guardaron dos fragmentos, uno por cada archivo. Cada vez que cambies tus documentos, vuelve a ejecutarlo.
 
-## Paso 6 · app.py
+## Paso 6 · El cerebro
 
-- **10:51** — Ahora la parte principal: el asistente. Creamos el archivo app.py.
-- **11:28** — Importamos os, uuid para crear un identificador único para cada conversación, y psycopg para conectarnos a PostgreSQL.
-- **11:38** — Luego, una pieza de LangChain por cada servicio: GptLuna, Ollama, Qdrant y la memoria en PostgreSQL.
-- **11:46** — Y estas son herramientas para armar la 'cadena', que es el camino que sigue cada pregunta. Las veremos en un momento.
-- **12:11** — Configuramos el LLM. Como GptLuna es compatible con OpenAI, usamos ChatOpenAI y solo cambiamos la base_url por la de GptLuna.
-- **12:20** — La temperatura controla la creatividad: con 0.3 las respuestas son más precisas y menos inventadas.
-- **12:52** — Ahora nos conectamos a la colección que ya creamos con ingest.py. Es importante usar el mismo modelo de embeddings.
-- **13:06** — El retriever es nuestro buscador: por cada pregunta nos devolverá los 3 fragmentos más parecidos.
-- **13:26** — Ahora la memoria. Nos conectamos a PostgreSQL con la dirección del .env, y creamos la tabla chat_history, donde se guardarán los mensajes.
-- **13:43** — Esta función recibe el identificador de un hilo, el session_id, y devuelve el historial de esa conversación.
-- **13:50** — Así, cada conversación tiene su propia memoria, separada de las demás.
-- **14:13** — Estas son las instrucciones del asistente: le decimos que sea amable, que responda solo con el contexto, y que si no sabe, lo diga.
-- **14:21** — Las llaves con 'context' son un espacio vacío: ahí LangChain pondrá los textos que encuentre Qdrant.
-- **14:38** — El prompt es el mensaje completo que le enviaremos a GptLuna, y tiene tres partes.
-- **14:43** — Las instrucciones con el contexto, el historial de la conversación, y la pregunta actual del usuario.
-- **15:00** — buscar_contexto toma la pregunta, le pide al retriever los fragmentos parecidos, y une sus textos en uno solo.
-- **15:16** — Y esta es la cadena. El símbolo de la barra vertical significa 'y luego pásaselo a'.
-- **15:21** — Primero agregamos el contexto, luego armamos el prompt, se lo pasamos a GptLuna, y al final nos quedamos solo con el texto de la respuesta.
-- **15:42** — Finalmente envolvemos la cadena con RunnableWithMessageHistory. Esto le agrega la memoria.
-- **15:48** — En cada mensaje lee el historial del hilo, y al terminar guarda automáticamente la pregunta y la respuesta en PostgreSQL.
-- **16:10** — Ya solo falta el chat en la consola. Primero pedimos el id del hilo: si presionamos Enter, se crea uno nuevo con uuid4.
-- **16:38** — Y este bucle se repite para siempre: pide una pregunta, se la envía al asistente junto con el session_id, y muestra la respuesta.
-- **16:46** — Si escribimos 'salir', el programa termina.
-- **16:50** — ¡Y listo! Todo el asistente en unas 90 líneas de código. Vamos a probarlo.
+- **12:04** — Ahora el corazón del proyecto: asistente.py. Aquí juntamos el cerebro, la búsqueda y la memoria.
+- **12:43** — Importamos una pieza de LangChain por cada servicio: GptLuna, Ollama, Qdrant y la memoria en PostgreSQL.
+- **13:04** — Primero el cerebro. ChatOpenAI se conecta con OpenAI usando tu API key, y el modelo gpt-6-luna. Activamos la API de respuestas, que es la más moderna de OpenAI.
+- **13:44** — Luego nos conectamos a la colección que creamos con ingest.py, usando el mismo modelo de embeddings.
+- **13:50** — Y el retriever es nuestro buscador: por cada pregunta nos devuelve los 3 fragmentos más parecidos.
+- **14:17** — Ahora la memoria. Nos conectamos a PostgreSQL y creamos la tabla chat_history, donde se guardan los mensajes.
+- **14:23** — La función obtener_historial devuelve los mensajes de un hilo, así cada conversación tiene su propia memoria.
+- **14:55** — Esta es la personalidad de JARVIS. Le pedimos respuestas cortas, de máximo tres oraciones, porque se van a leer en voz alta.
+- **15:03** — Las llaves con context son un espacio vacío: ahí pondremos los textos que encuentre Qdrant.
+- **15:31** — El prompt es el mensaje completo que recibe GptLuna: la personalidad con el contexto, el historial de la conversación y tu pregunta.
+- **15:41** — buscar_contexto le pasa tu pregunta al retriever y une el texto de los fragmentos que encuentra.
+- **15:56** — Y esta es la cadena. La barra vertical significa 'y luego pásaselo a': agregamos el contexto, armamos el prompt, se lo enviamos a GptLuna y nos quedamos con el texto.
+- **16:34** — Por último, preguntar_a_jarvis. Lee el historial del hilo, ejecuta la cadena con los últimos 10 mensajes, y guarda tu pregunta y su respuesta en PostgreSQL.
 
-## Paso 7 · ¡A probar!
+## Paso 7 · El servidor
 
-- **16:56** — Maximizo la terminal para verlo mejor, y ejecutamos python app.py.
-- **17:09** — Presioné Enter, así que se creó un hilo nuevo. Le pregunto por el producto estrella... ¡y responde con la información de nuestro documento!
-- **17:25** — Ahora pregunto '¿Y hasta qué hora atienden?'. Funciona porque recibe el historial de la conversación.
-- **17:38** — Ahora la prueba de fuego para la memoria: salimos, y volvemos a entrar con el mismo id de hilo.
-- **17:57** — ¡Lo recuerda todo! Porque cada mensaje quedó guardado en PostgreSQL.
-- **18:03** — Si quieres comprobarlo, podemos ver la tabla chat_history directamente en la base de datos.
-- **18:09** — Ahí están: los mensajes del usuario como 'human' y los del asistente como 'ai'.
+- **16:45** — Ahora el servidor web: app.py. Es muy cortito, gracias a FastAPI.
+- **17:06** — Mensaje describe lo que nos envía la página: el texto de tu pregunta y el id del hilo.
+- **17:24** — Esta ruta, /api/chat, recibe el mensaje, se lo pregunta a JARVIS y devuelve la respuesta.
+- **17:39** — Y con app.mount servimos la página web, que va en la carpeta web.
+
+## Paso 8 · La página web
+
+- **17:45** — Ahora la página. Creamos la carpeta web con el archivo index.html. El HTML lo pego para ir más rápido.
+- **17:53** — Tiene tres partes. El núcleo animado de JARVIS: tres anillos y un centro brillante.
+- **18:00** — El chat, donde aparecen los mensajes.
+- **18:05** — Y la entrada: un botón de micrófono para hablarle, el cuadro de texto y el botón de enviar.
+- **18:11** — Los estilos también los pego: estilo.css.
+- **18:17** — Lo más interesante es la animación: cada anillo gira a una velocidad distinta, y el centro late como un corazón.
+- **18:26** — Y cambia según el estado: cuando piensa, gira rápido y se pone naranja; cuando habla, late más rápido.
+- **18:34** — Y el último archivo, app.js, que le da vida a la página. Este sí lo escribimos y lo explico.
+- **18:51** — Primero el hilo: creamos un identificador único y lo guardamos en el navegador. Así, aunque recargues la página, JARVIS sigue recordando la conversación.
+- **19:48** — cambiarEstado actualiza el núcleo y el texto de estado, y agregarMensaje pone cada mensaje en el chat.
+- **20:15** — Con SpeechSynthesis, el navegador lee la respuesta en voz alta, en español y gratis.
+- **21:02** — preguntar envía tu mensaje a nuestro servidor con fetch, muestra la respuesta, y la lee en voz alta. Si algo falla, te avisa.
+- **22:02** — Y al final, el reconocimiento de voz: al presionar el micrófono, el navegador escucha, convierte tu voz en texto y se lo pregunta a JARVIS.
+
+## Paso 9 · ¡Probamos JARVIS!
+
+- **22:12** — ¡Llegó el momento! Encendemos el servidor con uvicorn app:app --reload.
+- **22:18** — Hacemos Control + clic en la dirección, y se abre JARVIS en el navegador.
+- **22:24** — Probemos con otra pregunta.
+- **22:45** — Ahora la prueba de fuego para la memoria: recargo la página...
+- **22:50** — ...y le pregunto de qué hablamos antes.
+- **23:04** — ¡Lo recuerda todo! Porque cada mensaje quedó guardado en PostgreSQL, en el mismo hilo.
+- **23:10** — Y en la terminal puedes ver cada mensaje que llegó al servidor.
 
 ## Resumen
 
-- **18:14** — Hagamos un resumen. Levantamos Qdrant, PostgreSQL y Ollama con Docker.
-- **18:19** — Con ingest.py convertimos nuestros documentos en vectores y los guardamos en Qdrant.
-- **18:24** — Y con app.py creamos un asistente con RAG y memoria, usando GptLuna y LangChain.
-- **18:31** — Como reto, prueba agregar tus propios documentos a la carpeta docs, vuelve a ejecutar ingest.py, y hazle preguntas.
-- **18:40** — El código completo está en GitHub, el enlace está en la descripción.
-- **18:44** — Si te sirvió, dale like, suscríbete y déjame en los comentarios tus dudas. En la próxima clase le crearemos una interfaz web. ¡Nos vemos!
+- **23:14** — ¡Y listo! Hagamos un resumen de lo que construimos.
+- **23:17** — Un JARVIS que usa GptLuna como cerebro, bge-m3 y Qdrant para buscar en tus documentos, y PostgreSQL para recordar las conversaciones.
+- **23:26** — Todo en Windows, sin Docker, y con una página web que te responde con voz.
+- **23:31** — Como reto, agrega tus propios documentos a la carpeta docs, vuelve a ejecutar ingest.py, y pregúntale lo que quieras.
+- **23:40** — El código completo está en GitHub; te dejo el enlace en la descripción.
+- **23:45** — Si te gustó, dale like, suscríbete y cuéntame en los comentarios qué le agregarías a tu JARVIS. ¡Nos vemos en el próximo video!
 
 ## Capítulos para la descripción de YouTube
 
 ```
 0:00 Introducción
-0:15 Resultado final
-0:49 Conceptos básicos
-3:13 Paso 1 · Docker
-5:15 Paso 2 · Entorno Python
-6:31 Paso 3 · Configuración
-7:41 Paso 4 · Documentos
-8:14 Paso 5 · ingest.py
-10:51 Paso 6 · app.py
-16:55 Paso 7 · ¡A probar!
-18:14 Resumen
+0:20 Resultado final
+0:59 Las 5 piezas
+1:24 ¿Qué es un LLM?
+1:49 Comparativa de LLMs
+2:50 Embeddings
+3:37 Qdrant
+4:00 RAG
+4:24 Memoria
+4:54 Arquitectura
+5:21 Instalación en Windows
+6:09 Paso 1 · Servicios
+6:48 Paso 2 · Entorno Python
+8:03 Paso 3 · Configuración
+9:09 Paso 4 · Tus documentos
+9:42 Paso 5 · ingest.py
+12:04 Paso 6 · El cerebro
+16:45 Paso 7 · El servidor
+17:45 Paso 8 · La página web
+22:12 Paso 9 · ¡Probamos JARVIS!
+23:14 Resumen
 ```
