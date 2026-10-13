@@ -7,6 +7,8 @@
 @font-face { font-family: "Lato"; font-weight: 400; src: url(fuentes/lato-latin-400-normal.woff2) format("woff2"); }
 @font-face { font-family: "Lato"; font-weight: 700; src: url(fuentes/lato-latin-700-normal.woff2) format("woff2"); }
 @font-face { font-family: "Lato"; font-weight: 900; src: url(fuentes/lato-latin-900-normal.woff2) format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-weight: 400; src: url(fuentes/jetbrains-mono-latin-400-normal.woff2) format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-weight: 700; src: url(fuentes/jetbrains-mono-latin-700-normal.woff2) format("woff2"); }
 
 :root {
   --primario: #007bdf;
@@ -28,6 +30,19 @@ body {
   --forma: #e3effb;
   --primario-suave: #e6f2fc;
 }
+/* Tema HUD (Iron Man): fondo plano muy oscuro, líneas holográficas celestes */
+body.hud {
+  --fondo: #111518;
+  --superficie: #182026;
+  --borde: #23404f;
+  --texto: #ffffff;
+  --suave: #a9bcc9;
+  --forma: #16242c;
+  --primario-suave: #0f2f3d;
+  --hud: #00cbff;
+  --hud-tenue: rgba(0, 203, 255, 0.28);
+}
+.mono { font-family: "JetBrains Mono", monospace; }
 /* Tema oscuro */
 body.oscuro {
   --fondo: #282d31;
