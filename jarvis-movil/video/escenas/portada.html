@@ -33,17 +33,12 @@
     .estado-tel { display: flex; justify-content: space-between; padding: 18px 34px 0; font: 700 18px "Lato"; color: #e8eef3; }
     .estado-tel .icono { width: 20px; height: 20px; }
     .app-top { display: flex; align-items: center; justify-content: space-between; padding: 30px 26px 0; }
-    .app-top h3 { margin: 0; font: 800 30px "Open Sans"; letter-spacing: .12em; }
+    .app-top h3 { margin: 0; font: 800 28px "Open Sans"; letter-spacing: .16em; color: var(--secundario); }
     .modo { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 999px;
       background: rgba(31, 179, 106, .16); color: #4ade80; font: 700 16px "Lato"; }
     .modo .icono { width: 18px; height: 18px; }
-    .orbe { position: relative; width: 170px; height: 170px; margin: 34px auto 0; }
-    .orbe span { position: absolute; border-radius: 50%; }
-    .o1 { inset: 0; border: 6px solid var(--primario); border-left-color: transparent; border-right-color: transparent; }
-    .o2 { inset: 24px; border: 5px solid var(--secundario); border-top-color: transparent; }
-    .o3 { inset: 52px; background: var(--secundario); }
-    .o4 { inset: 70px; background: #fff; }
-    .estado-app { text-align: center; margin-top: 16px; font: 700 15px "Lato"; letter-spacing: .22em; color: var(--secundario); }
+    #nucleo-app { display: block; margin: 6px auto 0; overflow: visible; }
+    .estado-app { text-align: center; margin-top: 2px; font: 700 14px "JetBrains Mono"; letter-spacing: .18em; color: var(--secundario); }
     .chat { padding: 26px 22px 0; display: flex; flex-direction: column; gap: 14px; }
     .msg { max-width: 82%; padding: 14px 18px; border-radius: 20px; font: 400 19px/1.4 "Lato"; }
     .msg.tu { align-self: flex-end; background: var(--primario); border-bottom-right-radius: 6px; }
@@ -70,7 +65,7 @@
     <div class="izq">
       <span class="kicker" id="k"></span>
       <h1 class="t1">Crea tu propio</h1>
-      <div class="t2">JARVIS</div>
+      <div class="t2">YARBYS</div>
       <div class="t3"><span class="resaltado">100%</span> en tu celular</div>
       <div class="sub">Un asistente de IA que funciona <b>sin internet</b>: lee tus documentos, recuerda tus conversaciones y te habla.</div>
       <div class="chips" id="chips"></div>
@@ -82,24 +77,25 @@
       <div class="pantalla">
         <div class="isla"></div>
         <div class="estado-tel"><span>9:41</span><span id="iconos-tel"></span></div>
-        <div class="app-top"><h3>JARVIS</h3><span class="modo" id="modo"></span></div>
-        <div class="orbe"><span class="o1"></span><span class="o2"></span><span class="o3"></span><span class="o4"></span></div>
-        <div class="estado-app">EN LÍNEA · LOCAL</div>
+        <div class="app-top"><h3>YARBYS</h3><span class="modo" id="modo"></span></div>
+        <svg id="nucleo-app" width="320" height="320" viewBox="-160 -160 320 320"></svg>
+        <div class="estado-app">MODO LOCAL · GEMMA 4</div>
         <div class="chat">
           <div class="msg tu">¿Qué tengo el miércoles?</div>
           <div class="msg ia">Tienes que entregar el proyecto de la tienda online antes de las 6 de la tarde.
             <div class="fuente-doc" id="fuente"></div></div>
-          <div class="msg tu">¿Y cómo se llama mi perro?</div>
         </div>
-        <div class="entrada"><div class="campo">Pregúntale a JARVIS...</div><div class="mic" id="mic"></div></div>
+        <div class="entrada"><div class="campo">Habla con YARBYS...</div><div class="mic" id="mic"></div></div>
       </div>
     </div>
     <img class="logo" src="../marca/logo.png">
   </div>
   <script src="lib/iconos.js"></script>
+  <script src="lib/nucleo.js"></script>
   <script>
     const tema = new URLSearchParams(location.search).get("tema");
-    if (tema === "oscuro") document.body.classList.add("oscuro");
+    if (tema !== "claro") document.body.classList.add("oscuro");
+    dibujarNucleo(document.querySelector("#nucleo-app"), 132, { nombre: "YARBYS", estado: "EN LÍNEA" });
     const ico = (n, c = "") => `<span class="icono" style="${c ? "color:" + c : ""}">${ICONOS[n] || ""}</span>`;
     document.querySelector("#k").innerHTML = ico("smartphone") + "Curso · IA en tu celular";
     const chips = [["si_flutter", "Flutter", "#02569b"], ["brain", "Gemma 4", "#fba905"], ["binary", "EmbeddingGemma", "#00cbff"],
