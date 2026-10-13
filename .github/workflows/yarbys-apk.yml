@@ -1,0 +1,62 @@
+# Compila la app YARBYS (jarvis-movil/yarbys) y deja el APK listo para descargar.
+# - En cada push que cambie la app: el APK queda en la pestaña Actions (artefacto "yarbys-apk").
+# - Si creas una etiqueta yarbys-v* (ej: yarbys-v1.0.0): además se publica como Release.
+name: YARBYS APK
+
+on:
+  push:
+    paths:
+      - "jarvis-movil/yarbys/**"
+      - ".github/workflows/yarbys-apk.yml"
+    tags:
+      - "yarbys-v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: jarvis-movil/yarbys
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.7"
+          channel: stable
+          cache: true
+
+      - name: Dependencias
+        run: flutter pub get
+
+      - name: Revisar el código
+        run: flutter analyze
+
+      - name: Pruebas
+        run: flutter test
+
+      - name: Compilar APK (solo arm64, el que usan los celulares modernos)
+        run: flutter build apk --release --target-platform android-arm64
+
+      - name: Renombrar
+        run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/yarbys.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: yarbys-apk
+          path: jarvis-movil/yarbys/build/app/outputs/flutter-apk/yarbys.apk
+
+      - name: Publicar Release
+        if: startsWith(github.ref, 'refs/tags/yarbys-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: jarvis-movil/yarbys/build/app/outputs/flutter-apk/yarbys.apk

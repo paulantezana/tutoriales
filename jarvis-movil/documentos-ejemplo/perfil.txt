@@ -1,0 +1,5 @@
+Mi nombre es Alex. Soy desarrollador móvil y vivo en Lima, Perú.
+Me gusta el café americano sin azúcar y escuchar rock de los 80 mientras programo.
+Mi lenguaje favorito es Dart y estoy aprendiendo inteligencia artificial.
+Mi cumpleaños es el 14 de marzo.
+Tengo un perro que se llama Rocky.
