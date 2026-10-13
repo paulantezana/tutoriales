@@ -585,7 +585,10 @@ class Director:
         self.atajo("Enter", 0.8)
         f = dict(self.s.files)
         f[ruta] = ""
-        self.set(files=f, input_explorer=None, tabs=self.s.tabs + (ruta,), activo=ruta,
+        tabs = self.s.tabs + (ruta,)
+        if len(tabs) > 6:            # cierra las pestañas más viejas, como haría una persona
+            tabs = tabs[-6:]
+        self.set(files=f, input_explorer=None, tabs=tabs, activo=ruta,
                  cursor=(0, 0), foco="editor", sel=None)
         self.mover(ED_X + 500, ED_Y + 200, 0.5)
         self.wait(0.4)
@@ -937,7 +940,7 @@ def dibujar_vscode(img, d, s, blink):
     cw = 560
     d.rounded_rectangle((W / 2 - cw / 2, 6, W / 2 + cw / 2, TITLE_H - 7), 6,
                         fill=(36, 36, 36), outline=(60, 60, 60))
-    d.text((W / 2, TITLE_H / 2), "asistente", font=F_UI_S, fill=C_MUTED, anchor="mm")
+    d.text((W / 2, TITLE_H / 2), "jarvis", font=F_UI_S, fill=C_MUTED, anchor="mm")
     for i, c in enumerate([(200, 200, 200)] * 3):
         bx = W - 140 + i * 46
         if i == 0:
@@ -974,7 +977,7 @@ def dibujar_vscode(img, d, s, blink):
     d.text((ACT_W + 20, TITLE_H + 12), "EXPLORER", font=F_UI_S, fill=C_MUTED)
     ry = TITLE_H + 40
     chevron(d, ACT_W + 10, ry + 2, True)
-    d.text((ACT_W + 28, ry), "ASISTENTE", font=fnt(INTER + "Inter-Bold.otf", 16), fill=C_TEXT)
+    d.text((ACT_W + 28, ry), "JARVIS", font=fnt(INTER + "Inter-Bold.otf", 16), fill=C_TEXT)
     # iconos (nuevo archivo, nueva carpeta, refrescar, colapsar)
     bx, by = BTN_NUEVO
     hover = abs(s.mouse[0] - bx) < 16 and abs(s.mouse[1] - by) < 16
@@ -1058,7 +1061,7 @@ def dibujar_vscode(img, d, s, blink):
     else:
         ruta = s.activo
         partes = ruta.split("/")
-        bc = "asistente  ›  " + "  ›  ".join(partes)
+        bc = "jarvis  ›  " + "  ›  ".join(partes)
         d.text((ED_X + 20, TITLE_H + TABS_H + 5), bc, font=F_UI_S, fill=C_MUTED)
         texto = s.files[ruta]
         lineas = colorear(ruta.split("/")[-1], texto)
