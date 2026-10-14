@@ -283,933 +283,933 @@ Y en android, app, src, main, abrimos AndroidManifest.xml: ahí van los permisos
 Agregamos el permiso de internet, para descargar los modelos, y el del micrófono, para hablar con YARBYS.
 
 72
-00:11:14,867 --> 00:11:18,800
+00:11:10,367 --> 00:11:14,300
 Cambiamos el nombre visible de la app a YARBYS, en mayúsculas.
 
 73
-00:11:18,800 --> 00:11:26,466
+00:11:14,300 --> 00:11:21,966
 Y en la sección queries avisamos que usaremos el reconocimiento de voz y la lectura en voz alta del sistema.
 
 74
-00:11:36,733 --> 00:11:42,967
+00:11:27,000 --> 00:11:33,233
 Para iPhone necesitas una Mac con Xcode; te dejo los pasos en el README del repositorio.
 
 75
-00:11:42,967 --> 00:11:52,533
+00:11:33,233 --> 00:11:42,800
 Antes de escribir código, vamos a crear todos los archivos del proyecto, y te explico para qué sirve cada uno. Así tendrás el mapa completo en la cabeza.
 
 76
-00:11:52,533 --> 00:12:04,467
+00:11:42,800 --> 00:11:54,733
 En lib creamos la carpeta servicios, que es la lógica de YARBYS: no se ve en la pantalla, pero hace todo el trabajo. El primero es modelos.dart, que descarga los dos modelos de inteligencia artificial.
 
 77
-00:12:04,467 --> 00:12:09,433
+00:11:54,733 --> 00:11:59,700
 memoria.dart guarda las conversaciones en SQLite.
 
 78
-00:12:09,433 --> 00:12:14,733
+00:11:59,700 --> 00:12:05,000
 conocimiento.dart aprende tus documentos y busca en ellos con Qdrant.
 
 79
-00:12:14,733 --> 00:12:19,647
+00:12:05,000 --> 00:12:09,914
 cerebro.dart arma el prompt y le pregunta a Gemma.
 
 80
-00:12:19,800 --> 00:12:24,467
+00:12:10,067 --> 00:12:14,733
 voz.dart escucha tu voz y lee las respuestas en voz alta.
 
 81
-00:12:24,467 --> 00:12:29,500
+00:12:14,733 --> 00:12:19,767
 Y ajustes.dart guarda las preferencias del usuario y su API key.
 
 82
-00:12:29,500 --> 00:12:37,433
+00:12:19,767 --> 00:12:27,700
 En la carpeta widgets va nucleo.dart, el círculo animado de YARBYS. Un widget es una pieza visual que podemos reutilizar.
 
 83
-00:12:37,433 --> 00:12:41,133
+00:12:27,700 --> 00:12:31,400
 tema.dart tiene los colores de la app.
 
 84
-00:12:41,133 --> 00:12:46,267
+00:12:31,400 --> 00:12:36,533
 Y en la carpeta pantallas, lo que ve el usuario: inicio, que descarga los modelos,
 
 85
-00:12:46,267 --> 00:12:49,773
+00:12:36,533 --> 00:12:40,039
 chat, la pantalla principal,
 
 86
-00:12:51,000 --> 00:12:54,890
+00:12:41,267 --> 00:12:45,157
 documentos, para agregar tus archivos,
 
 87
-00:12:56,333 --> 00:12:58,922
+00:12:46,600 --> 00:12:49,189
 y ajustes.
 
 88
-00:13:01,433 --> 00:13:08,300
+00:12:51,700 --> 00:12:58,567
 Este es el mapa del proyecto. main.dart ya existía: es el punto de partida, y lo dejaremos para el final.
 
 89
-00:13:08,300 --> 00:13:19,251
+00:12:58,567 --> 00:13:09,518
 Y cada archivo lo escribiremos siempre en el mismo orden: primero para qué sirve, luego sus clases, luego sus métodos, y al final lo que hace cada método por dentro.
 
 90
-00:13:19,367 --> 00:13:32,567
+00:13:09,633 --> 00:13:22,833
 Empezamos por modelos.dart. A la derecha tienes el mapa de este archivo: una clase, Modelos, con dos direcciones web, una propiedad para saber si los modelos ya están descargados, y dos métodos para descargarlos.
 
 91
-00:13:32,567 --> 00:13:38,526
+00:13:22,833 --> 00:13:28,793
 Primero escribimos la estructura: la clase y los métodos, todavía vacíos.
 
 92
-00:13:56,067 --> 00:14:08,000
+00:13:36,500 --> 00:13:48,433
 Una clase es como un molde que agrupa datos y funciones. Modelos solo agrupa funciones; por eso todo será static: lo usamos sin crear objetos, por ejemplo Modelos.descargarGemma.
 
 93
-00:14:08,000 --> 00:14:19,767
+00:13:48,433 --> 00:14:00,200
 descargarEmbeddings recibe una función, progreso, a la que le avisaremos el porcentaje de la descarga. Es async porque descargar toma tiempo, y así la app no se congela mientras espera.
 
 94
-00:14:19,767 --> 00:14:27,933
+00:14:00,200 --> 00:14:08,367
 descargarGemma es igual, pero para Gemma 4. Future<void> significa que el método termina más tarde y no devuelve ningún valor.
 
 95
-00:14:27,933 --> 00:14:32,367
+00:14:08,367 --> 00:14:12,800
 Ahora necesitamos las direcciones de los modelos. ¿De dónde las sacamos?
 
 96
-00:14:32,367 --> 00:14:39,633
+00:14:12,800 --> 00:14:20,067
 Los modelos abiertos se publican en Hugging Face, la plataforma donde Google y otras empresas comparten sus modelos.
 
 97
-00:14:39,633 --> 00:14:58,533
+00:14:20,067 --> 00:14:38,967
 Entras a huggingface.co, buscas gemma-4-E2B-it-litert-lm y abres el modelo de la cuenta litert-community. En la pestaña Files and versions está el archivo gemma-4-E2B-it.litertlm, de 2.6 gigas. Haces clic derecho en su botón de descarga y copias la dirección del enlace.
 
 98
-00:14:58,533 --> 00:15:10,786
+00:14:38,967 --> 00:14:51,219
 Fíjate en las partes del enlace: el sitio, quién lo publica, el nombre del modelo, la palabra resolve, que significa descargar, la versión, que aquí es main, la más reciente, y el nombre del archivo.
 
 99
-00:15:11,033 --> 00:15:19,233
+00:14:51,467 --> 00:14:59,666
 Volvemos a VS Code y creamos la constante urlGemma. La dirección no la escribimos a mano: la pegamos.
 
 100
-00:15:20,133 --> 00:15:31,500
+00:15:00,567 --> 00:15:11,933
 Para EmbeddingGemma es igual: buscas embeddinggemma-2-text-270m-litert-lm y copias el enlace del archivo .litertlm, de 165 megas.
 
 101
-00:15:31,500 --> 00:15:43,200
+00:15:11,933 --> 00:15:23,633
 Pero hay un detalle. En vez de main, usamos un código de versión exacta, llamado commit. Así, si algún día publican otro archivo con el mismo nombre, YARBYS sigue usando exactamente el mismo modelo.
 
 102
-00:15:43,200 --> 00:15:49,415
+00:15:23,633 --> 00:15:29,849
 ¿Y qué código usamos? El que recomienda la documentación del paquete. Vamos a verla.
 
 103
-00:15:55,133 --> 00:16:01,133
+00:15:35,567 --> 00:15:41,567
 En la página de flutter_edge_ai_litertlm, en la sección EmbeddingGemma 2...
 
 104
-00:16:01,133 --> 00:16:07,500
+00:15:41,567 --> 00:15:47,933
 ...está el código de versión, en la constante revision, y debajo el enlace del modelo, escrito en tres partes.
 
 105
-00:16:07,500 --> 00:16:23,267
+00:15:47,933 --> 00:16:03,700
 Para tener la dirección completa, juntamos las tres partes y cambiamos signo de dólar revision por ese código. O, más fácil: en Hugging Face, en el historial de versiones del modelo, abres esa versión y copias el enlace de descarga del archivo, igual que con Gemma.
 
 106
-00:16:23,267 --> 00:16:27,818
+00:16:03,700 --> 00:16:08,251
 Y lo pegamos en la constante urlEmbeddings.
 
 107
-00:16:34,500 --> 00:16:41,739
+00:16:14,933 --> 00:16:22,173
 Ahora listos: nos dice si los dos modelos ya están en el celular, para no descargarlos otra vez.
 
 108
-00:16:46,767 --> 00:16:58,033
+00:16:27,200 --> 00:16:38,467
 La flecha devuelve el resultado directamente. hasActiveModel revisa Gemma, hasActiveEmbedder revisa EmbeddingGemma, y con el doble ampersand, los dos tienen que estar listos.
 
 109
-00:16:58,033 --> 00:17:01,817
+00:16:38,467 --> 00:16:42,250
 Implementamos descargarEmbeddings.
 
 110
-00:17:08,267 --> 00:17:22,033
+00:16:48,733 --> 00:17:02,500
 installEmbedder prepara la instalación del modelo de embeddings, modelFromNetwork le dice que lo baje de nuestra URL, withModelProgress nos avisa el porcentaje, e install lo descarga. Con await esperamos a que termine.
 
 111
-00:17:22,033 --> 00:17:24,963
+00:17:02,500 --> 00:17:05,430
 Y descargarGemma.
 
 112
-00:17:36,700 --> 00:17:49,443
+00:17:14,967 --> 00:17:27,710
 installModel es lo mismo para el LLM. modelType le dice a la librería que es Gemma 4, y fileType, que es un archivo .litertlm, el formato del motor LiteRT-LM.
 
 113
-00:17:49,933 --> 00:17:53,866
+00:17:28,200 --> 00:17:32,133
 Y modelos.dart está completo.
 
 114
-00:17:54,500 --> 00:18:06,633
+00:17:32,767 --> 00:17:44,900
 Seguimos con memoria.dart. Tendrá cuatro clases: tres pequeñas que representan los datos —un mensaje, un hilo o conversación, y un documento—, y la clase Memoria, que los guarda y los lee de SQLite.
 
 115
-00:18:06,633 --> 00:18:14,257
+00:17:44,900 --> 00:17:52,523
 Escribimos la estructura. Las tres clases de datos son cortas: solo tienen sus campos y un constructor.
 
 116
-00:19:24,500 --> 00:19:36,867
+00:17:59,633 --> 00:18:12,000
 Mensaje tiene tres campos: el rol, que dice quién habló, el texto, y las fuentes. final significa que no cambian después de crearse. La línea de arriba es el constructor: la forma de crear un mensaje.
 
 117
-00:19:36,867 --> 00:19:43,467
+00:18:12,000 --> 00:18:18,600
 Y esUsuario es un getter: una propiedad calculada que nos dice si el mensaje lo escribió el usuario.
 
 118
-00:19:43,467 --> 00:19:47,233
+00:18:18,600 --> 00:18:22,367
 Hilo es una conversación, con su id y un título.
 
 119
-00:19:47,233 --> 00:19:52,600
+00:18:22,367 --> 00:18:27,733
 Y Documento guarda el nombre del archivo y en cuántos fragmentos lo cortamos.
 
 120
-00:19:52,600 --> 00:20:00,967
+00:18:27,733 --> 00:18:36,100
 La clase Memoria guarda la conexión con la base de datos en _db. El guion bajo la hace privada: solo se usa dentro de este archivo.
 
 121
-00:20:00,967 --> 00:20:04,733
+00:18:36,100 --> 00:18:39,867
 abrir abre la base de datos al arrancar la app.
 
 122
-00:20:04,733 --> 00:20:10,467
+00:18:39,867 --> 00:18:45,600
 Y estos métodos trabajan con los hilos: listarlos, borrar uno o borrarlos todos.
 
 123
-00:20:10,467 --> 00:20:13,300
+00:18:45,600 --> 00:18:48,433
 mensajes lee los mensajes de un hilo.
 
 124
-00:20:13,300 --> 00:20:16,422
+00:18:48,433 --> 00:18:51,555
 Implementamos abrir.
 
 125
-00:21:04,733 --> 00:21:13,679
+00:18:57,867 --> 00:19:06,813
 Armamos la ruta del archivo yarbys.db, dentro de la carpeta de la app, y openDatabase lo abre. Si no existe, lo crea.
 
 126
-00:21:14,667 --> 00:21:28,933
+00:19:07,800 --> 00:19:22,067
 onCreate se ejecuta solo la primera vez. Con el lenguaje SQL creamos las tablas: hilos, con cada conversación, y mensajes, donde cada mensaje guarda el id del hilo al que pertenece. La tabla documentos es igual.
 
 127
-00:21:28,933 --> 00:21:36,727
+00:19:22,067 --> 00:19:29,861
 Ahora los hilos. nuevoHilo crea una conversación con insert, que agrega una fila a la tabla, y devuelve su id.
 
 128
-00:21:37,633 --> 00:21:44,425
+00:19:30,967 --> 00:19:37,758
 hilos los lee todos con query, del más nuevo al más viejo, y convierte cada fila en un Hilo.
 
 129
-00:21:46,867 --> 00:21:50,000
+00:19:40,467 --> 00:19:43,600
 borrarHilo borra sus mensajes y luego el hilo.
 
 130
-00:21:50,000 --> 00:21:52,867
+00:19:43,600 --> 00:19:46,467
 Y borrarTodo vacía las dos tablas.
 
 131
-00:21:52,867 --> 00:22:02,197
+00:19:46,467 --> 00:19:55,797
 guardar inserta un mensaje en la tabla mensajes. Las fuentes las unimos con una barra vertical, porque SQLite guarda texto.
 
 132
-00:22:06,867 --> 00:22:11,333
+00:20:00,100 --> 00:20:04,566
 Y mensajes es el que le da memoria a YARBYS.
 
 133
-00:22:32,367 --> 00:22:44,000
+00:20:10,333 --> 00:20:21,967
 Pide los mensajes del hilo del más nuevo al más viejo, y con limit solo los últimos. Luego los volteamos con reversed para leerlos en orden, y convertimos cada fila en un Mensaje.
 
 134
-00:22:44,000 --> 00:22:49,298
+00:20:21,967 --> 00:20:27,265
 Los métodos de documentos son iguales a los de hilos; los pego.
 
 135
-00:22:52,200 --> 00:22:55,002
+00:20:30,167 --> 00:20:32,969
 Memoria lista.
 
 136
-00:22:55,333 --> 00:23:04,194
+00:20:33,300 --> 00:20:42,161
 Sigue conocimiento.dart: aquí vive el RAG. La clase Conocimiento guarda tus documentos en Qdrant y busca en ellos.
 
 137
-00:24:26,933 --> 00:24:34,500
+00:20:49,467 --> 00:20:57,033
 _indice es el índice de Qdrant, donde están los vectores. late significa que le daremos valor más tarde, en abrir.
 
 138
-00:24:34,500 --> 00:24:42,967
+00:20:57,033 --> 00:21:05,500
 _perfil identifica el tipo de vectores que crea EmbeddingGemma 2. Qdrant lo guarda para no mezclar vectores de modelos distintos.
 
 139
-00:24:42,967 --> 00:24:47,667
+00:21:05,500 --> 00:21:10,200
 fragmentar recibe un texto y devuelve una lista de fragmentos.
 
 140
-00:24:47,667 --> 00:24:53,733
+00:21:10,200 --> 00:21:16,267
 aprender recibe el nombre y el texto de un documento, y devuelve cuántos fragmentos guardó.
 
 141
-00:24:53,733 --> 00:24:58,300
+00:21:16,267 --> 00:21:20,833
 Y buscar recibe la pregunta y devuelve los fragmentos más parecidos.
 
 142
-00:24:58,300 --> 00:25:01,422
+00:21:20,833 --> 00:21:23,955
 Implementamos abrir.
 
 143
-00:25:21,633 --> 00:25:28,894
+00:21:31,433 --> 00:21:38,694
 FlutterEdgeAiRag es el sistema de RAG, y le decimos que guarde los vectores con Qdrant Edge.
 
 144
-00:25:29,633 --> 00:25:37,567
+00:21:39,433 --> 00:21:47,367
 Abrimos el índice en una carpeta de la app, y le indicamos que EmbeddingGemma será quien convierta los textos en vectores.
 
 145
-00:25:37,567 --> 00:25:42,533
+00:21:47,367 --> 00:21:52,333
 fragmentar es un poco más largo; lo pego y lo explicamos.
 
 146
-00:25:42,533 --> 00:25:53,698
+00:21:52,333 --> 00:22:03,498
 Separamos el texto por párrafos y los vamos juntando hasta llegar a unos 800 caracteres. Cuando no cabe uno más, guardamos el fragmento y empezamos otro.
 
 147
-00:25:54,367 --> 00:26:02,367
+00:22:04,167 --> 00:22:12,167
 Y si un párrafo solo ya es muy largo, lo cortamos en el último espacio antes del límite, para no partir una palabra.
 
 148
-00:26:02,367 --> 00:26:05,105
+00:22:12,167 --> 00:22:14,905
 Ahora aprender.
 
 149
-00:26:28,467 --> 00:26:41,082
+00:22:22,900 --> 00:22:35,515
 Fragmentamos el texto y anotamos el documento en SQLite. Luego, por cada fragmento, add crea su vector con EmbeddingGemma y lo guarda en Qdrant, junto con el nombre del documento.
 
 150
-00:26:41,467 --> 00:26:45,067
+00:22:35,900 --> 00:22:39,500
 Y flush guarda los cambios en el disco.
 
 151
-00:26:45,067 --> 00:26:49,733
+00:22:39,500 --> 00:22:44,167
 olvidar hace lo contrario: borra los fragmentos del documento. Lo pego.
 
 152
-00:26:49,733 --> 00:26:52,194
+00:22:44,167 --> 00:22:46,627
 Y buscar.
 
 153
-00:26:59,333 --> 00:27:08,633
+00:22:53,800 --> 00:23:03,100
 search convierte la pregunta en vector y nos devuelve los tres fragmentos más parecidos. threshold descarta los que se parecen muy poco.
 
 154
-00:27:08,633 --> 00:27:14,533
+00:23:03,100 --> 00:23:09,000
 origen lee el nombre del documento desde los datos que guardamos con el fragmento.
 
 155
-00:27:14,533 --> 00:27:17,549
+00:23:09,000 --> 00:23:12,015
 Conocimiento listo.
 
 156
-00:27:18,133 --> 00:27:26,631
+00:23:12,600 --> 00:23:21,098
 Llegamos al cerebro. La clase Cerebro tiene la personalidad de YARBYS y los métodos para armar el prompt y responder.
 
 157
-00:28:21,667 --> 00:28:30,533
+00:23:28,367 --> 00:23:37,233
 armarPrompt recibe la pregunta, los fragmentos encontrados, y el historial de la conversación, y devuelve el texto completo que leerá Gemma.
 
 158
-00:28:30,533 --> 00:28:38,233
+00:23:37,233 --> 00:23:44,933
 responder devuelve un Stream: un flujo de datos que llega en pedacitos. Así recibimos la respuesta token por token.
 
 159
-00:28:38,233 --> 00:28:46,133
+00:23:44,933 --> 00:23:52,833
 _local responde con Gemma, dentro del celular. async con asterisco significa que va entregando valores poco a poco.
 
 160
-00:28:46,133 --> 00:28:49,800
+00:23:52,833 --> 00:23:56,500
 Y _externo usa un LLM de internet. Es opcional.
 
 161
-00:28:49,800 --> 00:28:54,693
+00:23:56,500 --> 00:24:01,393
 Primero la personalidad: las instrucciones de sistema.
 
 162
-00:29:12,833 --> 00:29:21,367
+00:24:11,000 --> 00:24:19,533
 Le decimos quién es, que responda en español, en máximo tres oraciones y sin formato, porque las respuestas se leen en voz alta.
 
 163
-00:29:21,367 --> 00:29:24,318
+00:24:19,533 --> 00:24:22,485
 Ahora armarPrompt.
 
 164
-00:29:55,300 --> 00:30:07,467
+00:24:30,300 --> 00:24:42,467
 StringBuffer va juntando texto. Primero escribimos los fragmentos de tus documentos, luego la conversación reciente, y al final la pregunta. Exactamente lo que vimos en la parte de RAG.
 
 165
-00:30:07,467 --> 00:30:10,887
+00:24:42,467 --> 00:24:45,887
 responder elige el cerebro.
 
 166
-00:30:13,500 --> 00:30:22,500
+00:24:48,800 --> 00:24:57,800
 Si el usuario activó la nube, usa el LLM externo; si no, Gemma en el celular. Ese signo de pregunta es un if en una sola línea.
 
 167
-00:30:22,500 --> 00:30:26,433
+00:24:57,800 --> 00:25:01,733
 Y _local, la parte más importante.
 
 168
-00:30:49,833 --> 00:31:03,622
+00:25:08,700 --> 00:25:22,489
 getActiveModel carga Gemma en la memoria. maxTokens es cuánto texto puede leer a la vez: el contexto. Y createChat crea la conversación con la personalidad y un máximo de 512 tokens de respuesta.
 
 169
-00:31:04,167 --> 00:31:12,467
+00:25:23,033 --> 00:25:31,333
 Le enviamos el prompt, y con yield entregamos cada token apenas Gemma lo genera. Al final, en finally, cerramos el chat.
 
 170
-00:31:12,467 --> 00:31:18,667
+00:25:31,333 --> 00:25:37,533
 La parte del LLM externo es opcional. La pego y te explico lo importante.
 
 171
-00:31:18,667 --> 00:31:24,519
+00:25:37,533 --> 00:25:43,386
 La API key la escribe cada usuario en la app; nunca va escrita en el código.
 
 172
-00:31:25,467 --> 00:31:35,467
+00:25:44,333 --> 00:25:54,333
 Con el paquete http enviamos el mismo prompt a Anthropic, para Claude Haiku, o a OpenAI, para GPT-6 Luna. El resto de la app no cambia.
 
 173
-00:31:35,467 --> 00:31:40,833
+00:25:54,333 --> 00:25:59,700
 Y _leer convierte la respuesta en datos, o lanza un error si algo falló.
 
 174
-00:31:40,833 --> 00:31:44,190
+00:25:59,700 --> 00:26:03,057
 El cerebro está completo.
 
 175
-00:31:44,867 --> 00:31:52,319
+00:26:03,733 --> 00:26:11,186
 Ahora la voz. La clase Voz tiene un oído, que convierte tu voz en texto, y una boca, que lee en voz alta.
 
 176
-00:32:40,433 --> 00:32:47,200
+00:26:18,433 --> 00:26:25,200
 _oido es un SpeechToText y _boca un FlutterTts: vienen de los dos paquetes de voz que instalamos.
 
 177
-00:32:47,200 --> 00:32:54,233
+00:26:25,200 --> 00:26:32,233
 alDejarDeEscuchar es una función que la pantalla del chat nos dará, para avisarle cuando el micrófono se apague.
 
 178
-00:32:54,233 --> 00:33:01,900
+00:26:32,233 --> 00:26:39,900
 escuchar recibe la función alOir, a la que le pasaremos el texto mientras hablas, y devuelve false si no hay permiso de micrófono.
 
 179
-00:33:01,900 --> 00:33:06,835
+00:26:39,900 --> 00:26:44,835
 Implementamos escuchar; lo pego y lo vemos por partes.
 
 180
-00:33:06,933 --> 00:33:16,775
+00:26:44,933 --> 00:26:54,775
 La primera vez, initialize prepara el reconocimiento de voz y pide el permiso del micrófono. Y si el celular está en español, usamos su idioma.
 
 181
-00:33:17,500 --> 00:33:25,000
+00:26:55,500 --> 00:27:03,000
 listen escucha, nos va pasando el texto mientras hablas, y termina cuando te quedas en silencio tres segundos.
 
 182
-00:33:25,000 --> 00:33:28,869
+00:27:03,000 --> 00:27:06,869
 dejarDeEscuchar apaga el micrófono.
 
 183
-00:33:30,300 --> 00:33:32,697
+00:27:08,900 --> 00:27:11,297
 Y hablar.
 
 184
-00:33:45,467 --> 00:33:53,400
+00:27:20,267 --> 00:27:28,200
 La primera vez configuramos la boca en español, y le pedimos que espere a terminar de hablar. Luego speak lee el texto.
 
 185
-00:33:53,400 --> 00:33:56,373
+00:27:28,200 --> 00:27:31,173
 Y callar la detiene.
 
 186
-00:34:00,700 --> 00:34:05,123
+00:27:35,433 --> 00:27:39,857
 Y ajustes.dart guarda las preferencias.
 
 187
-00:34:52,067 --> 00:35:00,567
+00:27:47,333 --> 00:27:55,833
 _cofre es un FlutterSecureStorage: guarda los datos cifrados, en Android con Keystore y en iPhone con Keychain. Ideal para la API key.
 
 188
-00:35:00,567 --> 00:35:07,233
+00:27:55,833 --> 00:28:02,500
 Estas son las preferencias. usarNube empieza en false: por defecto, YARBYS es cien por ciento local.
 
 189
-00:35:07,233 --> 00:35:14,733
+00:28:02,500 --> 00:28:10,000
 Y esPro es el interruptor de la versión Pro. Aquí conectarías una compra dentro de la app; en este proyecto viene desbloqueada.
 
 190
-00:35:14,733 --> 00:35:18,858
+00:28:10,000 --> 00:28:14,125
 cargar lee el cofre al arrancar la app.
 
 191
-00:35:31,267 --> 00:35:40,967
+00:28:22,633 --> 00:28:32,333
 readAll lee todo el cofre, y cada preferencia toma su valor. El doble signo de pregunta pone un valor por defecto si todavía no se guardó nada.
 
 192
-00:35:40,967 --> 00:35:43,833
+00:28:32,333 --> 00:28:35,200
 guardar escribe cada valor; lo pego.
 
 193
-00:35:43,833 --> 00:35:49,302
+00:28:35,200 --> 00:28:40,669
 Y estas dos funciones leen y guardan la API key, una por proveedor.
 
 194
-00:36:01,633 --> 00:36:06,931
+00:28:48,000 --> 00:28:53,298
 nombreCerebro es el texto que mostramos debajo del núcleo.
 
 195
-00:36:13,300 --> 00:36:18,129
+00:29:00,400 --> 00:29:05,229
 Los servicios están listos. Ahora, la parte visual.
 
 196
-00:36:18,467 --> 00:36:25,770
+00:29:05,567 --> 00:29:12,870
 tema.dart tiene los colores, el tema y un pequeño widget: la píldora que dice Sin internet.
 
 197
-00:36:25,833 --> 00:36:30,900
+00:29:12,933 --> 00:29:18,000
 Colores agrupa la paleta: así cambiamos un color en un solo lugar.
 
 198
-00:36:30,900 --> 00:36:40,100
+00:29:18,000 --> 00:29:27,200
 Pildora es un StatelessWidget: un widget sin estado, que siempre se dibuja igual con los datos que recibe. Recibe un texto, un color y un ícono.
 
 199
-00:36:40,100 --> 00:36:44,967
+00:29:27,200 --> 00:29:32,067
 Todo widget tiene un método build, que devuelve lo que se dibuja en la pantalla.
 
 200
-00:36:44,967 --> 00:36:49,833
+00:29:32,067 --> 00:29:36,933
 temaYarbys devuelve el tema oscuro de Material; lo pego.
 
 201
-00:36:49,833 --> 00:36:57,000
+00:29:36,933 --> 00:29:44,100
 Le decimos que es oscuro y le damos nuestros colores. Todos los botones, campos y barras los usarán.
 
 202
-00:36:57,000 --> 00:37:00,122
+00:29:44,100 --> 00:29:47,222
 Y el build de la píldora.
 
 203
-00:37:01,067 --> 00:37:09,927
+00:29:48,167 --> 00:29:57,027
 Aquí se ve la idea de los bloques: un Container con fondo redondeado, que adentro tiene una fila, Row, con el ícono y el texto.
 
 204
-00:37:11,833 --> 00:37:19,179
+00:29:58,933 --> 00:30:06,279
 Y ahora lo más vistoso: el núcleo. Aquí aparece un concepto clave de Flutter: el StatefulWidget.
 
 205
-00:37:19,233 --> 00:37:24,133
+00:30:06,333 --> 00:30:11,233
 Un enum es una lista de opciones fijas: los cuatro estados de YARBYS.
 
 206
-00:37:24,133 --> 00:37:31,100
+00:30:11,233 --> 00:30:18,200
 Un StatefulWidget tiene dos partes. El widget, Nucleo, recibe la configuración: el estado y el tamaño...
 
 207
-00:37:31,100 --> 00:37:41,467
+00:30:18,200 --> 00:30:28,567
 ...y su State, _NucleoState, guarda los datos que cambian con el tiempo: los segundos y el giro. Cada vez que cambian, llamamos a setState y Flutter vuelve a dibujar.
 
 208
-00:37:41,467 --> 00:37:46,567
+00:30:28,567 --> 00:30:33,667
 Y _PintorNucleo es un CustomPainter: un lienzo donde dibujamos con código.
 
 209
-00:37:46,567 --> 00:37:51,300
+00:30:33,667 --> 00:30:38,400
 initState se ejecuta una vez, cuando el widget aparece.
 
 210
-00:37:51,300 --> 00:38:02,433
+00:30:38,400 --> 00:30:49,533
 Creamos un Ticker, que nos avisa en cada cuadro de la pantalla, sesenta veces por segundo. En cada aviso, setState suma el tiempo y el giro, y Flutter redibuja el núcleo.
 
 211
-00:38:02,433 --> 00:38:07,933
+00:30:49,533 --> 00:30:55,033
 _velocidad dice qué tan rápido gira cada estado: al pensar, cuatro veces más rápido.
 
 212
-00:38:07,933 --> 00:38:12,700
+00:30:55,033 --> 00:30:59,800
 dispose apaga el reloj cuando el widget desaparece, para no gastar batería.
 
 213
-00:38:12,700 --> 00:38:16,500
+00:30:59,800 --> 00:31:03,600
 build entrega el lienzo: CustomPaint con nuestro pintor.
 
 214
-00:38:16,500 --> 00:38:23,967
+00:31:03,600 --> 00:31:11,067
 Estas son funciones de ayuda para dibujar: un punto en el círculo, un trazo, un arco, girar y escribir texto. Las pego.
 
 215
-00:38:23,967 --> 00:38:29,500
+00:31:11,067 --> 00:31:16,600
 Y paint dibuja el núcleo, anillo por anillo. Pego la primera parte.
 
 216
-00:38:29,500 --> 00:38:35,502
+00:31:16,600 --> 00:31:22,602
 Calculamos el radio según el tamaño, y nos movemos al centro del lienzo.
 
 217
-00:38:36,033 --> 00:38:42,910
+00:31:23,133 --> 00:31:30,010
 El primer anillo es un círculo fino con 120 marcas, como un reloj, que gira despacio.
 
 218
-00:38:45,567 --> 00:38:54,299
+00:31:32,667 --> 00:31:41,399
 Luego vienen los bloques gruesos, los puntos, y este ecualizador: noventa barras que bailan cuando YARBYS escucha o habla.
 
 219
-00:38:56,967 --> 00:39:01,500
+00:31:44,067 --> 00:31:48,600
 Y al final, el centro, con el nombre y el estado actual.
 
 220
-00:39:01,500 --> 00:39:08,313
+00:31:48,600 --> 00:31:55,413
 shouldRepaint le dice a Flutter cuándo volver a pintar: cuando cambia el tiempo o el estado.
 
 221
-00:39:11,300 --> 00:39:14,486
+00:31:57,533 --> 00:32:00,719
 El núcleo está listo.
 
 222
-00:39:14,933 --> 00:39:21,597
+00:32:01,167 --> 00:32:07,830
 Ahora las pantallas. Empezamos por inicio: la que descarga los modelos la primera vez.
 
 223
-00:39:21,667 --> 00:39:27,167
+00:32:07,900 --> 00:32:13,400
 Su estado guarda el progreso de cada descarga, si está descargando, y el error, si lo hay.
 
 224
-00:39:27,167 --> 00:39:32,657
+00:32:13,400 --> 00:32:18,890
 initState: si los modelos ya están en el celular, entramos directo.
 
 225
-00:39:37,433 --> 00:39:41,131
+00:32:23,300 --> 00:32:26,998
 _descargar baja los dos modelos.
 
 226
-00:39:41,333 --> 00:39:52,033
+00:32:27,200 --> 00:32:37,900
 Usa los métodos de Modelos. Cada vez que llega un porcentaje nuevo, setState lo guarda y Flutter redibuja la barra de progreso. Si algo falla, catch muestra el error.
 
 227
-00:39:52,033 --> 00:39:56,367
+00:32:37,900 --> 00:32:42,233
 _entrar abre Qdrant y cambia a la pantalla del chat.
 
 228
-00:39:56,367 --> 00:40:04,433
+00:32:42,233 --> 00:32:50,300
 Navigator cambia de pantalla. Con pushReplacement, la pantalla de inicio se reemplaza y no se puede volver a ella.
 
 229
-00:40:04,433 --> 00:40:07,811
+00:32:50,300 --> 00:32:53,678
 Y build arma la pantalla.
 
 230
-00:40:08,400 --> 00:40:20,333
+00:32:54,267 --> 00:33:06,199
 Scaffold es la página, SafeArea evita la cámara y los bordes del celular, y ListView pone todo en una lista que se puede desplazar: el núcleo, los textos, las dos tarjetas y el botón.
 
 231
-00:40:20,733 --> 00:40:25,667
+00:33:06,600 --> 00:33:11,533
 El botón llama a _descargar, y se desactiva mientras descarga.
 
 232
-00:40:25,667 --> 00:40:30,282
+00:33:11,533 --> 00:33:16,149
 _Descarga es la tarjeta de cada modelo; la pego.
 
 233
-00:40:31,267 --> 00:40:38,762
+00:33:17,133 --> 00:33:24,629
 La pantalla del chat es la principal. Su método más importante es enviar: el corazón de toda la app.
 
 234
-00:40:38,833 --> 00:40:47,267
+00:33:24,700 --> 00:33:33,133
 Su estado guarda el controlador del campo de texto, la lista de mensajes en pantalla, los hilos, el hilo actual y el estado del núcleo.
 
 235
-00:40:47,267 --> 00:40:51,633
+00:33:33,133 --> 00:33:37,500
 Y aquí está enviar, todavía vacío. Lo escribiremos paso a paso.
 
 236
-00:40:51,633 --> 00:40:57,067
+00:33:37,500 --> 00:33:42,933
 initState carga los hilos y le da a la voz el aviso para cuando se apague el micrófono.
 
 237
-00:40:57,067 --> 00:41:00,500
+00:33:42,933 --> 00:33:46,367
 _cargarHilos lee las conversaciones de la memoria...
 
 238
-00:41:00,500 --> 00:41:04,033
+00:33:46,367 --> 00:33:49,900
 ...y _abrirHilo muestra los mensajes de una conversación.
 
 239
-00:41:04,033 --> 00:41:07,859
+00:33:49,900 --> 00:33:53,726
 Ahora sí, enviar. Paso uno, la memoria.
 
 240
-00:41:41,267 --> 00:41:52,767
+00:34:01,133 --> 00:34:12,633
 Si la conversación es nueva, creamos el hilo. Leemos los últimos seis mensajes y guardamos tu pregunta. Luego, setState la muestra en pantalla y pone el núcleo en pensando.
 
 241
-00:41:52,767 --> 00:41:56,870
+00:34:12,633 --> 00:34:16,737
 Pasos dos y tres: buscar y responder.
 
 242
-00:42:37,667 --> 00:42:45,333
+00:34:23,400 --> 00:34:31,066
 Buscamos en Qdrant los fragmentos más parecidos a la pregunta, y anotamos de qué documentos salieron.
 
 243
-00:42:46,067 --> 00:42:54,867
+00:34:31,800 --> 00:34:40,600
 Armamos el prompt, y con await for recibimos cada token y actualizamos la burbuja. Por eso la respuesta aparece poco a poco.
 
 244
-00:42:54,867 --> 00:42:59,119
+00:34:40,600 --> 00:34:44,853
 Y los pasos cuatro y cinco: guardar y hablar.
 
 245
-00:43:29,600 --> 00:43:33,490
+00:34:52,333 --> 00:34:56,223
 Guardamos la respuesta en la memoria...
 
 246
-00:43:34,100 --> 00:43:38,933
+00:34:56,833 --> 00:35:01,667
 ...y YARBYS la lee en voz alta, con el núcleo en el estado hablando.
 
 247
-00:43:38,933 --> 00:43:44,867
+00:35:01,667 --> 00:35:07,600
 _microfono hace lo mismo, pero con tu voz: cuando terminas de hablar, envía el texto reconocido.
 
 248
-00:43:44,867 --> 00:43:51,967
+00:35:07,600 --> 00:35:14,700
 Estas son funciones de ayuda: limpiar el markdown, mostrar avisos, bajar la lista y cambiar de pantalla. Las pego.
 
 249
-00:43:51,967 --> 00:43:56,561
+00:35:14,700 --> 00:35:19,294
 Y build, la pantalla. La pego y vemos sus bloques.
 
 250
-00:43:56,667 --> 00:44:05,954
+00:35:19,400 --> 00:35:28,687
 Arriba, una AppBar con el nombre, la píldora y los botones de documentos y ajustes. Y drawer es el menú lateral de conversaciones.
 
 251
-00:44:06,567 --> 00:44:12,163
+00:35:29,300 --> 00:35:34,897
 Luego el núcleo, que se achica con una animación cuando ya hay mensajes.
 
 252
-00:44:12,833 --> 00:44:17,342
+00:35:35,567 --> 00:35:40,075
 La lista de mensajes, una burbuja por mensaje...
 
 253
-00:44:18,000 --> 00:44:23,133
+00:35:40,733 --> 00:35:45,867
 ...y abajo el campo de texto, que al enviar llama a nuestra función enviar.
 
 254
-00:44:23,133 --> 00:44:26,533
+00:35:45,867 --> 00:35:49,267
 _menuHilos es el menú de conversaciones; lo pego.
 
 255
-00:44:26,533 --> 00:44:35,266
+00:35:49,267 --> 00:35:57,999
 Y _Burbuja dibuja cada mensaje: azul a la derecha si es tuyo, gris a la izquierda si es de YARBYS, con sus fuentes debajo.
 
 256
-00:44:36,233 --> 00:44:42,065
+00:35:58,967 --> 00:36:04,798
 La pantalla de documentos es parecida, así que la armamos más rápido.
 
 257
-00:44:44,833 --> 00:44:50,433
+00:36:07,567 --> 00:36:13,167
 _aprender le pasa el texto a Conocimiento y muestra un aviso con cuántos fragmentos guardó.
 
 258
-00:44:50,433 --> 00:44:54,238
+00:36:13,167 --> 00:36:16,971
 _elegirArchivos usa file_picker.
 
 259
-00:44:54,667 --> 00:45:05,833
+00:36:17,400 --> 00:36:28,567
 pickFiles abre el selector de archivos del celular, solo para .txt y .md. Leemos cada archivo, lo convertimos en texto y se lo damos a _aprender.
 
 260
-00:45:05,833 --> 00:45:09,700
+00:36:28,567 --> 00:36:32,433
 _escribirNota abre un diálogo para escribir o pegar una nota.
 
 261
-00:45:09,700 --> 00:45:13,761
+00:36:32,433 --> 00:36:36,494
 Y el resto: borrar, avisar y la pantalla.
 
 262
-00:45:17,767 --> 00:45:21,422
+00:36:40,500 --> 00:36:44,155
 Y la última pantalla, ajustes.
 
 263
-00:45:27,200 --> 00:45:31,495
+00:36:49,933 --> 00:36:54,229
 _cambiarModo activa el LLM externo.
 
 264
-00:45:31,533 --> 00:45:37,000
+00:36:54,267 --> 00:36:59,733
 Si alguien que no es Pro intenta activarlo, le mostramos la versión Pro.
 
 265
-00:45:37,000 --> 00:45:40,700
+00:36:59,733 --> 00:37:03,433
 _cambiarProveedor cambia entre OpenAI y Anthropic.
 
 266
-00:45:40,700 --> 00:45:44,078
+00:37:03,433 --> 00:37:06,811
 Y build arma la pantalla.
 
 267
-00:45:45,000 --> 00:45:50,682
+00:37:07,733 --> 00:37:13,415
 Con SegmentedButton se elige el cerebro: en el celular o externo.
 
 268
-00:45:51,200 --> 00:46:00,082
+00:37:13,933 --> 00:37:22,815
 Y le explicamos al usuario qué datos salen del celular cuando usa un LLM externo. Es importante ser transparentes.
 
 269
-00:46:02,000 --> 00:46:05,133
+00:37:24,733 --> 00:37:27,867
 Las cuatro pantallas están listas.
 
 270
-00:46:05,133 --> 00:46:13,418
+00:37:27,867 --> 00:37:36,151
 Por último, main.dart: el punto de partida. Lo abrimos: trae el ejemplo del contador de Flutter. Lo borramos todo.
 
 271
-00:46:40,500 --> 00:46:44,400
+00:37:43,433 --> 00:37:47,333
 main es lo primero que se ejecuta al abrir la app.
 
 272
-00:46:44,400 --> 00:46:47,700
+00:37:47,333 --> 00:37:50,633
 Y YarbysApp es el widget raíz de toda la app.
 
 273
-00:46:47,700 --> 00:46:50,715
+00:37:50,633 --> 00:37:53,649
 Implementamos main.
 
 274
-00:47:16,967 --> 00:47:26,233
+00:38:01,567 --> 00:38:10,833
 Encendemos el motor de inteligencia artificial: LiteRtLmEngine para Gemma, y LiteRtEmbeddingBackend para EmbeddingGemma.
 
 275
-00:47:26,833 --> 00:47:32,100
+00:38:11,433 --> 00:38:16,700
 Abrimos la memoria, cargamos los ajustes, y runApp arranca la app.
 
 276
-00:47:32,100 --> 00:47:35,435
+00:38:16,700 --> 00:38:20,035
 Y build devuelve la app.
 
 277
-00:47:45,000 --> 00:47:51,493
+00:38:26,800 --> 00:38:33,293
 MaterialApp con nuestro tema oscuro, y la pantalla de inicio como primera pantalla.
 
 278
-00:47:52,000 --> 00:47:54,800
+00:38:33,800 --> 00:38:36,600
 Y main.dart está listo.
 
 279
-00:47:54,800 --> 00:48:01,833
+00:38:36,600 --> 00:38:43,633
 Así queda el proyecto completo: los servicios con la inteligencia artificial, el núcleo y las pantallas.
 
 280
-00:48:01,833 --> 00:48:07,300
+00:38:43,633 --> 00:38:49,100
 Conectamos el celular por USB y revisamos que Flutter lo vea con flutter devices.
 
 281
-00:48:07,300 --> 00:48:14,933
+00:38:49,100 --> 00:38:56,733
 Ahí está mi Pixel 8. Ejecutamos la app con flutter run --release. En modo release, Gemma corre mucho más rápido.
 
 282
-00:48:14,933 --> 00:48:22,767
+00:38:56,733 --> 00:39:04,567
 La primera compilación tarda unos minutos, porque descarga las librerías nativas de LiteRT-LM y de Qdrant Edge.
 
 283
-00:48:22,767 --> 00:48:30,433
+00:39:04,567 --> 00:39:12,233
 Y se abre en el celular. La primera vez, YARBYS nos pide descargar los modelos. Usa Wi-Fi: son unos 2.8 gigas.
 
 284
-00:48:30,433 --> 00:48:38,419
+00:39:12,233 --> 00:39:20,219
 Aquí aceleré el video. Según tu internet, la descarga puede tardar varios minutos, pero se hace una sola vez.
 
 285
-00:48:38,433 --> 00:48:45,333
+00:39:20,233 --> 00:39:27,133
 Ya tenemos el chat. Primero le enseñamos nuestros documentos: toco el ícono de documentos, y Agregar archivo.
 
 286
-00:48:45,333 --> 00:48:52,467
+00:39:27,133 --> 00:39:34,267
 YARBYS lee cada archivo, lo corta en fragmentos, crea los embeddings y los guarda en Qdrant. Todo dentro del celular.
 
 287
-00:48:52,467 --> 00:48:57,000
+00:39:34,267 --> 00:39:38,800
 Ahora activo el modo avión, para comprobar que todo funciona sin internet.
 
 288
-00:48:57,000 --> 00:48:59,674
+00:39:38,800 --> 00:39:41,474
 Y le pregunto.
 
 289
-00:49:21,367 --> 00:49:26,100
+00:40:03,267 --> 00:40:08,000
 Perfecto. Ahora, la prueba de la memoria: cierro la app y la vuelvo a abrir.
 
 290
-00:49:26,100 --> 00:49:31,910
+00:40:08,000 --> 00:40:13,810
 Abro el menú, entro a la conversación de antes, y le pregunto de qué hablamos.
 
 291
-00:49:43,300 --> 00:49:48,667
+00:40:25,067 --> 00:40:30,433
 ¡Lo recuerda todo! Porque cada mensaje quedó guardado en SQLite, en el mismo hilo.
 
 292
-00:49:48,667 --> 00:49:58,200
+00:40:30,433 --> 00:40:39,967
 Y si quieres, en Ajustes puedes activar un LLM externo con tu propia API key. Es opcional: por defecto, YARBYS es cien por ciento local.
 
 293
-00:49:58,200 --> 00:50:09,200
+00:40:39,967 --> 00:40:50,967
 Para compartir la app sin cable, generamos el APK con flutter build apk. Con --target-platform android-arm64 compilamos solo para los celulares modernos.
 
 294
-00:50:09,200 --> 00:50:19,067
+00:40:50,967 --> 00:41:00,833
 Y en el repositorio de GitHub dejé un workflow de GitHub Actions que compila el APK automáticamente. Así puedes descargarlo y probarlo sin instalar nada.
 
 295
-00:50:19,067 --> 00:50:22,733
+00:41:00,833 --> 00:41:04,500
 Bonus: ¿cómo podrías ganar dinero con una app como YARBYS?
 
 296
-00:50:22,733 --> 00:50:31,167
+00:41:04,500 --> 00:41:12,933
 Una idea: la versión gratuita es cien por ciento local, sin límites. Eso atrae a muchos usuarios, porque sus datos nunca salen del celular.
 
 297
-00:50:31,167 --> 00:50:40,500
+00:41:12,933 --> 00:41:22,267
 Luego, una versión Pro de pago único, con funciones extra como el LLM externo. Como cada usuario pone su propia API key, tú no pagas los tokens.
 
 298
-00:50:40,500 --> 00:50:48,600
+00:41:22,267 --> 00:41:30,367
 Y para empresas: clínicas, estudios de abogados o colegios valoran mucho la privacidad. Puedes ofrecerles una versión a medida.
 
 299
-00:50:48,600 --> 00:50:55,327
+00:41:30,367 --> 00:41:37,094
 Y más adelante, si quieres, una suscripción con tu propio servidor. Pero empieza simple.
 
 300
-00:50:55,567 --> 00:50:58,733
+00:41:37,333 --> 00:41:40,500
 ¡Y listo! Hagamos un resumen de lo que construimos.
 
 301
-00:50:58,733 --> 00:51:11,333
+00:41:40,500 --> 00:41:53,100
 Un asistente que usa Gemma 4 como cerebro dentro del celular, EmbeddingGemma y Qdrant Edge para buscar en tus documentos, SQLite para recordar las conversaciones, y los motores de voz del teléfono.
 
 302
-00:51:11,333 --> 00:51:22,583
+00:41:53,100 --> 00:42:04,350
 Además, un LLM externo opcional para la versión Pro, y el APK listo con GitHub Actions. Como reto, agrégale tus propios documentos y pregúntale lo que quieras.
 
 303
-00:51:22,833 --> 00:51:27,367
+00:42:04,600 --> 00:42:09,133
 El código completo está en GitHub; te dejo el enlace en la descripción.
 
 304
-00:51:27,367 --> 00:51:36,441
+00:42:09,133 --> 00:42:18,207
 Si te gustó, dale like, suscríbete, y cuéntame en los comentarios qué le agregarías a tu YARBYS. ¡Nos vemos en el próximo video!
