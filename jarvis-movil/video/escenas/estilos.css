@@ -129,3 +129,6 @@ h1.titulo .amarillo { color: var(--enfasis); }
 .burbuja.ia { background: #1f272e; border: 2px solid #2c3a45; border-bottom-left-radius: 6px; }
 .fila { display: flex; align-items: center; }
 .ok { color: var(--verde); }
+@font-face { font-family: "Roboto"; font-weight: 400; src: url(fuentes/roboto-latin-400-normal.woff2) format("woff2"); }
+@font-face { font-family: "Roboto"; font-weight: 500; src: url(fuentes/roboto-latin-500-normal.woff2) format("woff2"); }
+@font-face { font-family: "Roboto"; font-weight: 700; src: url(fuentes/roboto-latin-700-normal.woff2) format("woff2"); }
