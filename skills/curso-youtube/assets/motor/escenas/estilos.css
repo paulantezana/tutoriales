@@ -1,0 +1,134 @@
+/* Estilo inspirado en la guía de EDteam (ux.ed.team): Open Sans para títulos,
+   Lato para el contenido, colores planos y sin degradados. */
+@font-face { font-family: "Open Sans"; font-weight: 400; src: url(fuentes/open-sans-latin-400-normal.woff2) format("woff2"); }
+@font-face { font-family: "Open Sans"; font-weight: 600; src: url(fuentes/open-sans-latin-600-normal.woff2) format("woff2"); }
+@font-face { font-family: "Open Sans"; font-weight: 700; src: url(fuentes/open-sans-latin-700-normal.woff2) format("woff2"); }
+@font-face { font-family: "Open Sans"; font-weight: 800; src: url(fuentes/open-sans-latin-800-normal.woff2) format("woff2"); }
+@font-face { font-family: "Lato"; font-weight: 400; src: url(fuentes/lato-latin-400-normal.woff2) format("woff2"); }
+@font-face { font-family: "Lato"; font-weight: 700; src: url(fuentes/lato-latin-700-normal.woff2) format("woff2"); }
+@font-face { font-family: "Lato"; font-weight: 900; src: url(fuentes/lato-latin-900-normal.woff2) format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-weight: 400; src: url(fuentes/jetbrains-mono-latin-400-normal.woff2) format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-weight: 700; src: url(fuentes/jetbrains-mono-latin-700-normal.woff2) format("woff2"); }
+
+:root {
+  --primario: #007bdf;
+  --secundario: #00cbff;
+  --terciario: #ff3c32;
+  --enfasis: #fba905;
+  --oscuro: #282d31;
+  --texto-gris: #53575a;
+  --verde: #1fb36a;
+}
+
+/* Tema claro (por defecto) */
+body {
+  --fondo: #f5f8fb;
+  --superficie: #ffffff;
+  --borde: #dfe6ee;
+  --texto: #282d31;
+  --suave: #53575a;
+  --forma: #e3effb;
+  --primario-suave: #e6f2fc;
+}
+/* Tema HUD (Iron Man): fondo plano muy oscuro, líneas holográficas celestes */
+body.hud {
+  --fondo: #111518;
+  --superficie: #182026;
+  --borde: #23404f;
+  --texto: #ffffff;
+  --suave: #a9bcc9;
+  --forma: #16242c;
+  --primario-suave: #0f2f3d;
+  --hud: #00cbff;
+  --hud-tenue: rgba(0, 203, 255, 0.28);
+}
+.mono { font-family: "JetBrains Mono", monospace; }
+/* Tema oscuro */
+body.oscuro {
+  --fondo: #282d31;
+  --superficie: #33393e;
+  --borde: #41484e;
+  --texto: #ffffff;
+  --suave: #b8c0c7;
+  --forma: #30363b;
+  --primario-suave: #18364f;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; width: 1920px; height: 1080px; overflow: hidden;
+  background: var(--fondo); color: var(--texto);
+  font-family: "Lato", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+#escena { position: absolute; inset: 0; }
+
+h1, h2, h3, .titulo { font-family: "Open Sans", sans-serif; }
+
+.kicker {
+  display: inline-flex; align-items: center; gap: 12px;
+  padding: 10px 22px; border-radius: 999px;
+  background: var(--primario-suave); color: var(--primario);
+  font: 700 22px "Open Sans"; letter-spacing: .08em; text-transform: uppercase;
+}
+.kicker .icono { width: 24px; height: 24px; }
+
+.icono { display: inline-grid; place-items: center; }
+.icono svg { width: 100%; height: 100%; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 12px;
+  padding: 14px 22px; border-radius: 14px;
+  background: var(--superficie); border: 2px solid var(--borde);
+  font: 700 26px "Lato";
+}
+.chip .icono { width: 32px; height: 32px; }
+
+.tarjeta {
+  background: var(--superficie); border: 2px solid var(--borde); border-radius: 22px;
+}
+.resaltado { position: relative; white-space: nowrap; z-index: 0; }
+.resaltado::after {
+  content: ""; position: absolute; left: -6px; right: -6px; bottom: 6px; height: 34%;
+  background: var(--enfasis); z-index: -1; border-radius: 6px;
+}
+
+/* ================= Componentes de las escenas del video ================= */
+.cabecera { position: absolute; left: 140px; top: 86px; width: 1640px; }
+h1.titulo {
+  margin: 22px 0 0; font: 800 76px/1.08 "Open Sans"; letter-spacing: -0.015em;
+}
+h1.titulo .acento { color: var(--secundario); }
+h1.titulo .amarillo { color: var(--enfasis); }
+.linea-titulo { overflow: hidden; display: block; padding-bottom: 4px; }
+.subtitulo { margin-top: 12px; font: 400 30px "Lato"; color: var(--suave); }
+
+.panel {
+  position: absolute; background: var(--superficie); border: 2px solid var(--borde); border-radius: 26px;
+}
+.panel-titulo {
+  display: flex; align-items: center; gap: 14px; font: 800 30px "Open Sans";
+}
+.panel-titulo .icono { width: 34px; height: 34px; }
+.etiqueta { font: 700 20px "Lato"; color: var(--suave); text-transform: uppercase; letter-spacing: .12em; }
+.pastilla {
+  display: inline-flex; align-items: center; gap: 12px;
+  padding: 14px 24px; border-radius: 999px;
+  background: var(--superficie); border: 2px solid var(--borde);
+  font: 700 26px "Lato"; white-space: nowrap;
+}
+.pastilla .icono { width: 30px; height: 30px; }
+.cuadro-icono { border-radius: 18px; display: grid; place-items: center; flex: none; }
+.mono { font-family: "JetBrains Mono", monospace; }
+.codigo {
+  font: 400 24px/1.55 "JetBrains Mono"; background: #1e2327; border: 2px solid var(--borde);
+  border-radius: 18px; padding: 22px 26px; white-space: pre; color: #d4d4d4;
+}
+.burbuja { padding: 16px 22px; border-radius: 22px; font: 400 25px/1.4 "Lato"; max-width: 520px; }
+.burbuja.tu { background: var(--primario); border-bottom-right-radius: 6px; color: #fff; }
+.burbuja.ia { background: #1f272e; border: 2px solid #2c3a45; border-bottom-left-radius: 6px; }
+.fila { display: flex; align-items: center; }
+.ok { color: var(--verde); }
+@font-face { font-family: "Roboto"; font-weight: 400; src: url(fuentes/roboto-latin-400-normal.woff2) format("woff2"); }
+@font-face { font-family: "Roboto"; font-weight: 500; src: url(fuentes/roboto-latin-500-normal.woff2) format("woff2"); }
+@font-face { font-family: "Roboto"; font-weight: 700; src: url(fuentes/roboto-latin-700-normal.woff2) format("woff2"); }

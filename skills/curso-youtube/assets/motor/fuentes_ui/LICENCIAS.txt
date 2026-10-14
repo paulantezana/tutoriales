@@ -1,0 +1,6 @@
+Inter (Rasmus Andersson) — SIL Open Font License 1.1 — https://rsms.me/inter/
+DejaVu Fonts — licencia libre de Bitstream Vera / dominio público — https://dejavu-fonts.github.io/
+Open Sans, Lato, JetBrains Mono — SIL Open Font License 1.1 (escenas/fuentes)
+Roboto — Apache License 2.0 (escenas/fuentes)
+GSAP y sus plugins (escenas/lib) — licencia estándar "no charge" de GreenSock/Webflow — https://gsap.com/standard-license
+Lucide (escenas/lib/iconos.js) — ISC — https://lucide.dev · Simple Icons (prefijo si_) — CC0
