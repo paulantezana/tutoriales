@@ -7,6 +7,7 @@ const P = new URLSearchParams(location.search);
 const ID = P.get("id");
 const DUR = parseFloat(P.get("dur") || "10");
 const M = (P.get("m") || "0").split(",").map(Number);
+const DATOS = JSON.parse(P.get("d") || "{}");  // datos extra de la escena (por ejemplo, qué modelo)
 
 gsap.registerPlugin(SplitText, DrawSVGPlugin, MotionPathPlugin);
 const tl = gsap.timeline({ paused: true });
@@ -823,6 +824,65 @@ ESCENAS.final = () => {
   const nombre = nuevo("div", "", "Paul Antezana", esc, "position:absolute;left:0;right:0;top:880px;text-align:center;font:700 28px Lato;color:var(--suave);letter-spacing:.2em;text-transform:uppercase");
   subir(nombre, m(1) + 0.8);
   tl.to(esc, { opacity: 0, duration: 0.8 }, DUR - 0.8);
+};
+
+// ¿De dónde sale la URL de un modelo? (pasos en Hugging Face y partes del enlace)
+ESCENAS.hf = () => {
+  const D = DATOS;
+  formas(0);
+  cabecera("¿De dónde sale la URL?", "link", `El enlace de <span class='acento'>${D.nombre}</span>`, "Los modelos abiertos se publican en Hugging Face");
+  const pasos = [
+    ["globe", "1 · Entra a", `<span class="mono" style="color:${C.celeste}">huggingface.co</span>`],
+    ["search", "2 · Busca", `<span class="mono" style="color:${C.amarillo}">${D.busqueda}</span>`],
+    ["folder-open", "3 · Abre la pestaña", `<b>Files and versions</b>`],
+    ["download", "4 · En el archivo", `clic derecho en <b>descargar</b> → <b>Copiar dirección del enlace</b>`],
+  ];
+  const cs = pasos.map(([i, t, d], k) => nuevo("div", "panel", `
+      <div class="cuadro-icono" style="width:66px;height:66px;background:${C.celeste}26;color:${C.celeste}">${ico(i, 36)}</div>
+      <div style="font:800 26px 'Open Sans';margin-top:18px">${t}</div>
+      <div style="font:400 24px/1.4 Lato;margin-top:8px;word-break:break-word">${d}</div>`,
+    esc, `left:${140 + k * 415}px;top:350px;width:390px;height:280px;padding:28px`));
+  subir(cs, 0.8, { stagger: 0.15 });
+  cs.forEach((c, k) => { resaltar(c, m(1) + k * Math.max(1.2, (m(2) - m(1)) / 4), C.amarillo); normal(c, m(1) + (k + 1) * Math.max(1.2, (m(2) - m(1)) / 4)); });
+
+  // Las partes del enlace
+  const caja = nuevo("div", "panel", "", esc, "left:140px;top:670px;width:1640px;height:290px;padding:28px 34px");
+  nuevo("div", "etiqueta", "Las partes del enlace", caja);
+  const fila = nuevo("div", "", "", caja, "position:relative;margin-top:26px;font:700 24px 'JetBrains Mono';white-space:nowrap");
+  const partes = [
+    ["https://huggingface.co/", C.gris, "el sitio"],
+    [D.cuenta, C.amarillo, "quién lo publica"],
+    ["/", null, ""],
+    [D.repo, C.celeste, "el modelo"],
+    ["/resolve/", C.gris, "descargar"],
+    [D.version, C.verde, D.version_txt],
+    ["/", null, ""],
+    [D.archivo, C.rojo, `el archivo · ${D.peso}`],
+  ];
+  const largo = partes.reduce((n, p) => n + p[0].length, 0);
+  fila.style.fontSize = `${Math.min(26, Math.floor(1560 / (largo * 0.6)))}px`;
+  const spans = partes.map(([t, c]) => nuevo("span", "", t, fila, `color:${c || "#fff"};${c ? `border-bottom:4px solid ${c};padding-bottom:6px` : ""}`));
+  // etiquetas debajo de cada parte, en dos filas para que no se encimen
+  const etiquetas = [];
+  let fila2 = 0;
+  partes.forEach(([t, c, et], i) => {
+    if (!c) return;
+    const sp = spans[i];
+    const e = nuevo("div", "", et, fila, `position:absolute;left:${sp.offsetLeft}px;top:${46 + (fila2 % 2) * 32}px;font:700 19px Lato;color:${c};white-space:nowrap`);
+    fila2++;
+    etiquetas.push([sp, e]);
+  });
+  const segs = etiquetas.flat();
+  subir(caja, m(2));
+  etiquetas.forEach(([sp, e], i) => {
+    tl.from(sp, { opacity: 0.25, duration: 0.4 }, m(2) + 0.6 + i * 0.4);
+    tl.from(e, { opacity: 0, y: 10, duration: 0.4 }, m(2) + 0.6 + i * 0.4);
+  });
+  if (D.nota) {
+    const nota = nuevo("div", "pastilla", `${ico("check", 26, C.verde)}${D.nota}`, caja, "position:absolute;left:34px;bottom:24px;font-size:21px;padding:10px 18px");
+    pop(nota, m(3) || m(2) + 3);
+  }
+  salida();
 };
 
 // ------------------------------------------------------------- arranque

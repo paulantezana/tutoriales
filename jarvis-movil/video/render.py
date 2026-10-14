@@ -54,7 +54,7 @@ VOZ = "em_alex"          # narrador. Voces en español de Kokoro: em_alex, ef_do
 VOZ_YARBYS = "em_santa"  # la voz con la que YARBYS lee sus respuestas
 VELOCIDAD = 1.0          # 1.1 = un poco más rápido
 NARRACION = True         # False = video sin voz (solo subtítulos)
-TECLADO = True           # sonido suave de teclado y clics del mouse
+TECLADO = False          # True = sonido suave de teclado y clics del mouse
 PAUSA_ENTRE_FRASES = 0.45
 
 # ============================================================== FUENTES
@@ -76,6 +76,10 @@ F_SUB = fnt(INTER + "Inter-Medium.otf", 34)
 F_NOTE = fnt(INTER + "Inter-Medium.otf", 26)
 F_NOTE_B = fnt(INTER + "Inter-Bold.otf", 26)
 F_KEY = fnt(INTER + "Inter-SemiBold.otf", 30)
+F_FICHA = fnt(INTER + "Inter-Medium.otf", 21)
+F_FICHA_B = fnt(INTER + "Inter-Bold.otf", 25)
+F_FICHA_T = fnt(INTER + "Inter-Bold.otf", 16)
+F_FICHA_M = fnt(DEJAVU + "DejaVuSansMono-Bold.ttf", 21)
 F_T1 = fnt(INTER + "InterDisplay-Bold.otf", 88)
 F_T2 = fnt(INTER + "InterDisplay-Bold.otf", 62)
 F_H = fnt(INTER + "Inter-SemiBold.otf", 38)
@@ -397,6 +401,7 @@ class Estado:
         self.fundido = 1.0
         self.capitulo = ""
         self.ocultar_mouse = False
+        self.ficha = None          # (titulo, descripcion, elementos, activo, hechos): el mapa del archivo
 
 
 # ============================================================== ESCENARIO / DIRECTOR
@@ -707,8 +712,8 @@ class Director:
             self.set(sel=(a, fin),
                      mouse=(ED_X + GUTTER + 30 + 260, ED_Y + (fin - top) * LH + LH / 2))
             self.emit(2)
-        if nota:
-            self.set(nota=(titulo, nota))
+        if nota or titulo:
+            self.set(nota=(titulo, nota or ""))
         for f in frases:
             self.say(f, esperar=True)
         self.wait(0.4)
@@ -794,6 +799,169 @@ class Director:
         """El video debe terminar con el mismo archivo que hay en el proyecto."""
         esperado = leer(ruta)
         assert self.s.files[ruta] == esperado, f"{ruta} no coincide con el proyecto"
+
+    # ---------- el mapa del archivo (ficha a la derecha del editor)
+    def ficha(self, titulo, descripcion, elementos):
+        """Muestra qué hay dentro del archivo: elementos = [(tipo, nombre, explicación), ...]."""
+        self.ficha_datos = (titulo, descripcion, tuple(elementos))
+        self.ficha_hechos = frozenset()
+        self.set(ficha=(titulo, descripcion, tuple(elementos), None, self.ficha_hechos))
+
+    def ficha_ver(self, activo=None):
+        t, d, e = self.ficha_datos
+        self.set(ficha=(t, d, e, activo, self.ficha_hechos))
+
+    def ficha_hecho(self, k):
+        self.ficha_hechos = self.ficha_hechos | {k}
+        if self.s.ficha:
+            self.ficha_ver(self.s.ficha[3])
+
+    def ficha_ocultar(self):
+        self.set(ficha=None)
+
+    def ficha_explicar(self, k, frase, firma=None):
+        """Resalta el elemento k de la ficha (y su línea en el código) mientras se explica."""
+        self.ficha_ver(k)
+        if firma:
+            a, b = self.buscar_lineas(firma)
+            top = self._mostrar_linea(a)
+            self.mover(ED_X + GUTTER + 30, ED_Y + (a - top) * LH + LH / 2, 0.45)
+            self.set(sel=(a, b))
+        self.say(frase, esperar=True)
+        self.set(sel=None)
+
+    # ---------- escribir un archivo por partes: primero el esqueleto, luego cada método
+    def escribir_codigo(self, texto, cps=19):
+        """Teclea código; las direcciones web no se teclean: se pegan (Ctrl + V)."""
+        for k, trozo in enumerate(re.split(r"(https?://[^'\"\s]+)", texto)):
+            if not trozo:
+                continue
+            if k % 2:
+                self.wait(0.3)
+                self.pegar(trozo)
+            else:
+                self.escribir(trozo, cps)
+
+    def esqueleto(self, plan, quitar=(), modo="escribir", cps=20):
+        """Escribe el archivo sin los bloques de 'quitar' (los cuerpos de los métodos)."""
+        quitados = set()
+        for a, b in quitar:
+            quitados.update(range(a, b + 1))
+        plan.presentes = [i not in quitados for i in range(len(plan.lineas))]
+        texto = plan.texto()
+        self.pos = None
+        if modo == "pegar":
+            self.pegar(texto)
+        else:
+            self.escribir_codigo(texto, cps)
+        assert self.texto() == texto, f"esqueleto de {plan.ruta} desfasado"
+
+    def completar(self, plan, rango, modo="escribir", cps=20):
+        """Escribe un bloque (por ejemplo el cuerpo de un método) en su lugar exacto."""
+        a, b = rango
+        assert not any(plan.presentes[a:b + 1]), f"{plan.ruta}: bloque {a}-{b} ya escrito"
+        previos = [k for k in range(a) if plan.presentes[k]]
+        actual = self.texto()
+        assert actual == plan.texto(), f"{plan.ruta} desfasado antes de completar"
+        if previos:
+            pos = sum(len(plan.lineas[k]) + 1 for k in previos) - 1   # final de la línea anterior
+            bloque = "\n" + "\n".join(plan.lineas[a:b + 1])
+        else:
+            pos = 0
+            bloque = "\n".join(plan.lineas[a:b + 1]) + "\n"
+        lin, col = self._cursor_de(actual, pos)
+        top = self._mostrar_linea(lin)
+        self.clic(ED_X + GUTTER + col * CW + 12, ED_Y + (lin - top) * LH + LH / 2)
+        self.set(cursor=(lin, col), foco="editor", sel=None)
+        self.atajo("End", 0.5)
+        self.pos = pos
+        if modo == "pegar":
+            self.pegar(bloque)
+        else:
+            self.escribir_codigo(bloque, cps)
+        self.pos = None
+        for k in range(a, b + 1):
+            plan.presentes[k] = True
+        assert self.texto() == plan.texto(), f"{plan.ruta}: el bloque {a}-{b} no quedó igual"
+
+    # ---------- navegador (páginas reales capturadas con Chromium)
+    def navegador_abrir(self):
+        self.atajo("Alt + Tab", 0.8)
+        self.set(navegador=("", ("vacia",)), foco="url", ocultar_mouse=False)
+        self.wait(0.6)
+
+    def _pagina(self, url_texto, pagina, scroll=0, extra=None):
+        self.set(navegador=(url_texto, ("pagina", pagina, scroll, extra)))
+
+    def _cargar(self, url_texto, pagina, seg=0.9):
+        n = round(seg * FPS)
+        for i in range(n):
+            self.set(navegador=(url_texto, ("cargando", i / max(1, n - 1))))
+            self.emit()
+        self._pagina(url_texto, pagina)
+        self.wait(0.3)
+
+    def navegador_ir(self, url_texto, pagina):
+        """Escribe la dirección en la barra y abre la página."""
+        self.mover(700, 62, 0.4)
+        self.clic()
+        self.set(navegador=("", self.s.navegador[1]), foco="url")
+        for c in url_texto:
+            self.set(navegador=(self.s.navegador[0] + c, self.s.navegador[1]))
+            self.emit(max(1, round(FPS / 15 * self.rnd.uniform(0.6, 1.4))))
+        self.wait(0.3)
+        self.atajo("Enter", 0.8)
+        self.set(foco="pagina")
+        self._cargar(url_texto, pagina)
+
+    def _centro(self, pagina, clave):
+        x, y, w, h = PAGINAS_CAJAS[pagina][clave]
+        scroll = self.s.navegador[1][2] if self.s.navegador[1][0] == "pagina" else 0
+        return x + w / 2, NAV_TOP + y + h / 2 - scroll
+
+    def navegador_escribir(self, clave, texto):
+        """Hace clic en un campo de la página y escribe en él."""
+        url, (tipo, pagina, scroll, _) = self.s.navegador
+        self.clic(*self._centro(pagina, clave))
+        for i in range(1, len(texto) + 1):
+            self._pagina(url, pagina, scroll, (clave, texto[:i]))
+            self.emit(max(1, round(FPS / 13 * self.rnd.uniform(0.6, 1.4))))
+        self.wait(0.3)
+
+    def navegador_clic(self, clave, url_nueva=None, pagina_nueva=None, mover=0.6):
+        url, (tipo, pagina, scroll, extra) = self.s.navegador
+        self.mover(*self._centro(pagina, clave), mover)
+        self.wait(0.2)
+        self.clic()
+        if pagina_nueva:
+            self._cargar(url_nueva, pagina_nueva)
+
+    def navegador_enter(self, url_nueva, pagina_nueva):
+        self.atajo("Enter", 0.8)
+        self._cargar(url_nueva, pagina_nueva)
+
+    def navegador_desplazar(self, hasta, dur=1.2):
+        """Desplaza la página (rueda del mouse) hasta que 'hasta' (px o clave) quede arriba."""
+        url, (tipo, pagina, scroll, extra) = self.s.navegador
+        if isinstance(hasta, str):
+            hasta = max(0, PAGINAS_CAJAS[pagina][hasta][1] - 140)
+        alto = PAGINAS_CAJAS[pagina]["_alto"]
+        hasta = max(0, min(hasta, alto - (H - NAV_TOP)))
+        n = max(1, round(dur * FPS))
+        for i in range(1, n + 1):
+            self._pagina(url, pagina, round(scroll + (hasta - scroll) * ease_io(i / n)), extra)
+            self.emit()
+
+    def navegador_marcar(self, clave, seg=1.5):
+        """Recuadro amarillo alrededor de un elemento de la página."""
+        url, (tipo, pagina, scroll, extra) = self.s.navegador
+        self._pagina(url, pagina, scroll, ("marco", clave))
+        self.wait(seg)
+
+    def navegador_cerrar(self):
+        self.atajo("Alt + Tab", 0.8)
+        self.set(navegador=None, foco="editor")
+        self.wait(0.4)
 
     # ---------- terminal
     venv_activo = False
@@ -1446,8 +1614,10 @@ def dibujar_nota(img, d, s):
     top = s.scroll.get(s.activo, 0)
     a, b = s.sel if s.sel else (s.cursor[0], s.cursor[0])
     ancho = 900
-    lineas = wrap(texto, F_NOTE, ancho - 70)
+    lineas = wrap(texto, F_NOTE, ancho - 70) if texto else []
     alto = 30 + (40 if titulo else 0) + len(lineas) * 36 + 14
+    if not lineas:
+        ancho = int(F_NOTE_B.getlength(titulo)) + 110
     x0 = ED_X + GUTTER + 40
     y_debajo = ED_Y + (b - top + 1) * LH + 16
     limite = editor_bottom(s) - 130
@@ -1504,16 +1674,19 @@ def dibujar_capitulo(img, s):
 class SlideHTML:
     """Escena animada hecha con HTML + GSAP (escenas/escenas.js), renderizada con Chromium."""
 
-    def __init__(self, id_):
+    def __init__(self, id_, datos=None):
         self.id = id_
+        self.datos = datos
         self.dur, self.marcas = 10.0, [0.0]
 
     def configurar(self, dur, marcas):
         self.dur, self.marcas = dur, marcas
 
     def url(self):
+        from urllib.parse import quote
         m = ",".join(f"{x:.3f}" for x in self.marcas)
-        return f"file://{ESCENAS_HTML}?id={self.id}&dur={self.dur:.3f}&m={m}"
+        d = f"&d={quote(json.dumps(self.datos, ensure_ascii=False))}" if self.datos else ""
+        return f"file://{ESCENAS_HTML}?id={self.id}&dur={self.dur:.3f}&m={m}{d}"
 
 
 class DemoApp:
@@ -1579,16 +1752,275 @@ def pegar_logo(img):
     img.paste(_logo, (W - 84 - 28, H - 84 - STATUS_H - 22), _logo)
 
 
+# ============================================================== FICHA DEL ARCHIVO
+COLOR_TIPO = {"clase": (78, 201, 176), "widget": (78, 201, 176), "estado": (197, 134, 192),
+              "método": (220, 220, 170), "función": (220, 220, 170), "getter": (220, 220, 170),
+              "campo": (156, 220, 254), "constante": (156, 220, 254), "enum": (78, 201, 176),
+              "carpeta": (220, 180, 90), "archivo": (64, 196, 255)}
+_cache_ficha = {}
+
+
+def dibujar_ficha(img, s):
+    """El mapa del archivo: para qué sirve y qué clases y métodos tiene."""
+    clave = s.ficha
+    if clave not in _cache_ficha:
+        titulo, desc, elementos, activo, hechos = s.ficha
+        ancho = 540
+        lin_desc = wrap(desc, F_FICHA, ancho - 48)
+        filas = []
+        for k, (tipo, nombre, expl) in enumerate(elementos):
+            sangria = 24 if tipo in ("método", "campo", "getter", "constante") else 0
+            bw = F_FICHA_T.getlength(tipo.upper()) + 16
+            libre = ancho - 24 - sangria - bw - 12 - 50
+            nombres = [""]
+            for parte in nombre.split(" · "):
+                prueba = parte if not nombres[-1] else nombres[-1] + " · " + parte
+                if nombres[-1] and F_FICHA_M.getlength(prueba) > libre:
+                    nombres[-1] += " ·"
+                    nombres.append(parte)
+                else:
+                    nombres[-1] = prueba
+            filas.append((k, tipo, nombres, wrap(expl, F_FICHA, ancho - 64 - sangria) if expl else [], sangria))
+        alto = 22 + 34 + len(lin_desc) * 29 + 20 + sum(44 + (len(n) - 1) * 28 + len(ex) * 26 for _, _, n, ex, _ in filas) + 14
+        capa = Image.new("RGBA", (ancho + 12, alto + 12), (0, 0, 0, 0))
+        dc = ImageDraw.Draw(capa)
+        dc.rounded_rectangle((6, 8, ancho + 6, alto + 8), 16, fill=(0, 0, 0, 110))
+        dc.rounded_rectangle((0, 0, ancho, alto), 16, fill=(30, 33, 38, 248), outline=MARCA + (255,), width=3)
+        icono_archivo(dc, 22, 22, titulo)
+        dc.text((52, 18), titulo, font=F_FICHA_B, fill=(255, 255, 255))
+        y = 22 + 34
+        for l in lin_desc:
+            dc.text((24, y), l, font=F_FICHA, fill=(200, 205, 212))
+            y += 29
+        y += 12
+        dc.line((24, y, ancho - 24, y), fill=(60, 66, 74), width=2)
+        y += 8
+        for k, tipo, nombres, ex, sang in filas:
+            extra = (len(nombres) - 1) * 28
+            h = 44 + extra + len(ex) * 26
+            if k == activo:
+                dc.rounded_rectangle((10, y - 2, ancho - 10, y + h - 6), 10, fill=(4, 57, 94, 255))
+            col = COLOR_TIPO.get(tipo, (200, 200, 200))
+            bw = F_FICHA_T.getlength(tipo.upper()) + 16
+            dc.rounded_rectangle((24 + sang, y + 8, 24 + sang + bw, y + 32), 6, outline=col, width=2)
+            dc.text((24 + sang + 8, y + 11), tipo.upper(), font=F_FICHA_T, fill=col)
+            for j, nombre in enumerate(nombres):
+                dc.text((24 + sang + bw + 12, y + 7 + j * 28), nombre, font=F_FICHA_M, fill=(255, 255, 255))
+            if k in hechos:
+                dc.text((ancho - 44, y + 6), "✓", font=F_SYM, fill=(35, 209, 139))
+            yy = y + 38 + extra
+            for l in ex:
+                dc.text((24 + sang + 4, yy), l, font=F_FICHA, fill=(170, 176, 184))
+                yy += 26
+            y += h
+        if len(_cache_ficha) > 40:
+            _cache_ficha.clear()
+        _cache_ficha[clave] = capa
+    capa = _cache_ficha[clave]
+    img.paste(capa, (W - capa.width - 26, ED_Y + 12), capa)
+
+
+# ============================================================== NAVEGADOR (páginas reales)
+NAV_TOP = 84                      # alto de la barra de pestañas + barra de direcciones
+CACHE_WEB = AQUI / "_cache_web"   # capturas de las páginas (ver capturar_paginas)
+PAGINAS = {                       # id -> (url, {clave: selector})
+    "pub_inicio": ("https://pub.dev", {"busqueda": "input[name=q]"}),
+    "pub_busqueda": ("https://pub.dev/packages?q=flutter_edge_ai",
+                     {"resultado": ".packages-item:first-child .packages-title a"}),
+    "pub_paquete": ("https://pub.dev/packages/flutter_edge_ai",
+                    {"titulo": "h1", "instalar": "a[href='/packages/flutter_edge_ai/install']"}),
+    "pub_instalar": ("https://pub.dev/packages/flutter_edge_ai/install",
+                     {"comando": "pre:has-text('flutter pub add')"}),
+    "pub_litertlm": ("https://pub.dev/packages/flutter_edge_ai_litertlm",
+                     {"eg2": "#embeddinggemma-2", "codigo_eg2": "pre:has-text('9be6e8b9')"}),
+}
+PAGINAS_CAJAS = {}                # id -> {clave: (x, y, w, h), "_alto": alto, "_titulo": título}
+ZOOM_WEB = 1.25                   # las páginas se ven al 125% para que se lean bien
+
+
+def capturar_paginas():
+    """Abre cada página real con Chromium y guarda una captura completa y la posición de sus elementos."""
+    import os
+    CACHE_WEB.mkdir(exist_ok=True)
+    pendientes = []
+    for pid, (url, sel) in PAGINAS.items():
+        meta = CACHE_WEB / f"{pid}.json"
+        if meta.exists():
+            datos = json.loads(meta.read_text(encoding="utf-8"))
+            if datos.get("url") == url and datos.get("selectores") == sel:
+                PAGINAS_CAJAS[pid] = datos["cajas"]
+                continue
+        pendientes.append(pid)
+    if not pendientes:
+        return
+    from playwright.sync_api import sync_playwright
+    print(f"Capturando {len(pendientes)} páginas web...", flush=True)
+    proxy = os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy")
+    with sync_playwright() as p:
+        b = p.chromium.launch(proxy={"server": proxy} if proxy else None)
+        ctx = b.new_context(viewport={"width": round(W / ZOOM_WEB), "height": round((H - NAV_TOP) / ZOOM_WEB)},
+                            device_scale_factor=ZOOM_WEB, locale="es-ES")
+        for pid in pendientes:
+            url, sel = PAGINAS[pid]
+            pg = ctx.new_page()
+            pg.goto(url, wait_until="networkidle", timeout=90000)
+            pg.wait_for_timeout(1200)
+            cajas = {}
+            for clave, selector in sel.items():
+                loc = pg.locator(selector).first
+                caja = loc.bounding_box()
+                if caja:
+                    cajas[clave] = [round(caja["x"] * ZOOM_WEB), round(caja["y"] * ZOOM_WEB),
+                                    round(caja["width"] * ZOOM_WEB), round(caja["height"] * ZOOM_WEB)]
+                else:
+                    print(f"  aviso: '{clave}' no está en {pid}", flush=True)
+            alto = min(pg.evaluate("document.documentElement.scrollHeight"), 9000)
+            pg.screenshot(path=str(CACHE_WEB / f"{pid}.png"), full_page=True,
+                          clip={"x": 0, "y": 0, "width": round(W / ZOOM_WEB), "height": alto})
+            cajas["_alto"] = round(alto * ZOOM_WEB)
+            cajas["_titulo"] = pg.title()
+            PAGINAS_CAJAS[pid] = cajas
+            (CACHE_WEB / f"{pid}.json").write_text(json.dumps({"url": url, "selectores": sel, "cajas": cajas},
+                                                             ensure_ascii=False), encoding="utf-8")
+            pg.close()
+            print(f"  {pid} lista", flush=True)
+        b.close()
+
+
+_cache_paginas = {}
+
+
+def imagen_pagina(pid):
+    if pid not in _cache_paginas:
+        _cache_paginas[pid] = Image.open(CACHE_WEB / f"{pid}.png").convert("RGB")
+    return _cache_paginas[pid]
+
+
+def dibujar_navegador(img, d, s, blink):
+    url, contenido = s.navegador
+    d.rectangle((0, 0, W, NAV_TOP), fill=(32, 32, 32))
+    titulo = "Nueva pestaña"
+    if contenido[0] == "pagina":
+        titulo = PAGINAS_CAJAS.get(contenido[1], {}).get("_titulo", url)
+    titulo = titulo if len(titulo) < 30 else titulo[:28] + "…"
+    d.rounded_rectangle((8, 6, 330, 44), 10, fill=(56, 56, 56))
+    d.rectangle((8, 30, 330, 44), fill=(56, 56, 56))
+    d.ellipse((22, 16, 40, 34), fill=(66, 133, 244))
+    d.text((52, 15), titulo, font=F_UI, fill=(235, 235, 235))
+    d.text((302, 13), "×", font=F_SYM, fill=(200, 200, 200))
+    d.text((348, 10), "+", font=F_UI_B, fill=(200, 200, 200))
+    for i in range(3):   # controles de ventana de Windows
+        bx = W - 140 + i * 46
+        c = (210, 210, 210)
+        if i == 0:
+            d.line((bx, 22, bx + 12, 22), fill=c)
+        elif i == 1:
+            d.rectangle((bx, 16, bx + 11, 27), outline=c)
+        else:
+            d.line((bx, 16, bx + 11, 27), fill=c)
+            d.line((bx, 27, bx + 11, 16), fill=c)
+    d.rectangle((0, 44, W, NAV_TOP), fill=(56, 56, 56))
+    for i, x in enumerate([22, 62, 102]):
+        col = (220, 220, 220) if i != 1 else (120, 120, 120)
+        if i == 0:
+            d.line((x + 12, 64, x, 64), fill=col, width=2); d.line((x, 64, x + 6, 58), fill=col, width=2); d.line((x, 64, x + 6, 70), fill=col, width=2)
+        elif i == 1:
+            d.line((x, 64, x + 12, 64), fill=col, width=2); d.line((x + 12, 64, x + 6, 58), fill=col, width=2); d.line((x + 12, 64, x + 6, 70), fill=col, width=2)
+        else:
+            d.arc((x, 57, x + 14, 71), 40, 330, fill=col, width=2)
+    d.rounded_rectangle((150, 50, W - 150, 78), 14, fill=(36, 36, 36))
+    d.ellipse((166, 57, 180, 71), outline=(170, 170, 170), width=2)
+    d.text((194, 54), url, font=F_UI, fill=(235, 235, 235))
+    if s.foco == "url" and blink:
+        cx = 194 + F_UI.getlength(url) + 2
+        d.line((cx, 55, cx, 74), fill=(235, 235, 235))
+    d.ellipse((W - 112, 52, W - 88, 76), fill=MARCA)
+    d.text((W - 60, 52), "···", font=F_UI_B, fill=(220, 220, 220))
+    if contenido[0] == "pagina":
+        _, pid, scroll, extra = contenido
+        pag = imagen_pagina(pid)
+        alto = H - NAV_TOP
+        recorte = pag.crop((0, scroll, W, scroll + alto))
+        img.paste(recorte, (0, NAV_TOP))
+        if extra and extra[0] == "marco":
+            x, y, w, h = PAGINAS_CAJAS[pid][extra[1]]
+            y = y + NAV_TOP - scroll
+            d.rounded_rectangle((x - 10, y - 8, x + w + 10, y + h + 8), 10, outline=MARCA2, width=5)
+        elif extra:
+            clave, texto = extra
+            x, y, w, h = PAGINAS_CAJAS[pid][clave]
+            y = y + NAV_TOP - scroll
+            fondo = pag.getpixel((min(W - 1, x + w - 12), min(pag.height - 1, PAGINAS_CAJAS[pid][clave][1] + h // 2)))
+            d.rectangle((x + 40, y + 6, x + w - 14, y + h - 6), fill=fondo)
+            claro = sum(fondo) / 3 > 140
+            fuente = fnt(INTER + "Inter-Regular.otf", max(18, int(h * 0.42)))
+            d.text((x + 46, y + h / 2), texto, font=fuente, fill=(30, 30, 30) if claro else (240, 240, 240), anchor="lm")
+            if blink:
+                cx = x + 46 + fuente.getlength(texto) + 2
+                d.line((cx, y + h * 0.25, cx, y + h * 0.75), fill=(30, 30, 30) if claro else (240, 240, 240), width=2)
+    elif contenido[0] == "cargando":
+        t = contenido[1]
+        d.rectangle((0, NAV_TOP, W, H), fill=(246, 247, 249))
+        d.rectangle((0, NAV_TOP, int(W * min(1.0, 0.15 + t * 0.85)), NAV_TOP + 3), fill=(0, 120, 212))
+    else:
+        d.rectangle((0, NAV_TOP, W, H), fill=(32, 33, 36))
+        d.text((W / 2, H / 2), "Nueva pestaña", font=F_H, fill=(150, 150, 150), anchor="mm")
+
+
+class Plan:
+    """Un archivo del proyecto que se escribe por partes: primero el esqueleto y luego cada bloque."""
+
+    def __init__(self, ruta):
+        self.ruta = ruta
+        self.lineas = leer(ruta).split("\n")
+        self.presentes = [False] * len(self.lineas)
+
+    def buscar(self, texto, desde=0):
+        return next(i for i in range(desde, len(self.lineas)) if texto in self.lineas[i])
+
+    def bloque(self, desde, hasta=None, despues_de=0):
+        a = self.buscar(desde, despues_de)
+        return (a, a if hasta is None else self.buscar(hasta, a))
+
+    def cuerpo(self, firma, desde=0):
+        """Las líneas entre la llave que abre un método y la llave que lo cierra."""
+        i = self.buscar(firma, desde)
+        k = i
+        while not self.lineas[k].rstrip().endswith("{"):
+            k += 1
+        sangria = len(self.lineas[i]) - len(self.lineas[i].lstrip())
+        j = next(m for m in range(k + 1, len(self.lineas))
+                 if self.lineas[m].strip().startswith("}")
+                 and len(self.lineas[m]) - len(self.lineas[m].lstrip()) == sangria)
+        return (k + 1, j - 1)
+
+    def texto(self):
+        return "\n".join(l for l, p in zip(self.lineas, self.presentes) if p)
+
+    def completo(self):
+        return all(self.presentes)
+
+
 # ============================================================== RENDER DE UN FOTOGRAMA
 def render(s, blink):
     if s.slide:
         obj, t, dur = s.slide
         img = chromium().captura(obj, t)
         d = ImageDraw.Draw(img)
+    elif s.navegador:
+        img = Image.new("RGB", (W, H), (32, 32, 32))
+        d = ImageDraw.Draw(img)
+        dibujar_navegador(img, d, s, blink)
+        if s.tecla:
+            dibujar_tecla(img, s)
+        if not s.ocultar_mouse:
+            dibujar_mouse(d, *s.mouse, s.click)
     else:
         img = Image.new("RGB", (W, H), C_BG)
         d = ImageDraw.Draw(img)
         dibujar_vscode(img, d, s, blink)
+        if s.ficha:
+            dibujar_ficha(img, s)
         if s.nota:
             dibujar_nota(img, d, s)
         dibujar_capitulo(img, s)
@@ -1665,7 +2097,31 @@ def pubspec_con(paquetes):
     return texto.replace("  cupertino_icons: ^1.0.8\n", "  cupertino_icons: ^1.0.8\n" + "".join(l + "\n" for l in lineas))
 
 
+def paso(D, P, k, rango, antes, modo="escribir", cps=20, despues=()):
+    """Implementa un bloque del archivo: lo señala en la ficha, lo escribe y explica sus partes.
+    despues = [(desde, hasta, titulo, nota, frase), ...]"""
+    D.ficha_ver(k)
+    D.say(antes)
+    D.wait(1.4)
+    D.ficha_ocultar()
+    D.completar(P, rango, modo, cps)
+    D.hold()
+    for desde, hasta, titulo, nota, frase in despues:
+        D.resaltar(desde, hasta, nota=nota, titulo=titulo, frases=[frase])
+    D.ficha_hecho(k)
+
+
+def fin_archivo(D, frase):
+    """Vuelve a mostrar la ficha con todo marcado y cierra el archivo."""
+    D.ficha_hechos = frozenset(range(len(D.ficha_datos[2])))
+    D.ficha_ver(None)
+    D.say(frase, esperar=True)
+    D.wait(0.4)
+    D.ficha_ocultar()
+
+
 def guion():
+    capturar_paginas()
     D = Director()
     D.set(mouse=(1500, 700))
 
@@ -1822,13 +2278,32 @@ def guion():
 
     # ---------------------------------------------------------- PASO 2: PAQUETES
     D.capitulo("Paso 2 · Paquetes")
-    D.say("Agregamos los paquetes de inteligencia artificial con flutter pub add.")
+    D.say("Ahora los paquetes. Los paquetes de Flutter se buscan en pub.dev, así que abrimos el navegador.")
+    D.wait(1.5)
+    D.navegador_abrir()
+    D.navegador_ir("pub.dev", "pub_inicio")
+    D.hold()
+    D.say("En el buscador escribimos flutter_edge_ai.")
+    D.navegador_escribir("busqueda", "flutter_edge_ai")
+    D.navegador_enter("pub.dev/packages?q=flutter_edge_ai", "pub_busqueda")
+    D.hold()
+    D.say("Y abrimos el primer resultado.")
+    D.navegador_clic("resultado", "pub.dev/packages/flutter_edge_ai", "pub_paquete")
+    D.hold()
+    D.navegador_marcar("titulo", 0.4)
+    D.say("Esta es la página del paquete. Aquí dice qué hace, en qué plataformas funciona y cómo se usa. flutter_edge_ai es el que ejecuta Gemma dentro del celular. Vamos a la pestaña Installing.", esperar=True)
+    D.navegador_clic("instalar", "pub.dev/packages/flutter_edge_ai/install", "pub_instalar")
+    D.navegador_marcar("comando", 0.4)
+    D.say("Aquí está el comando para instalarlo: flutter pub add flutter_edge_ai.", esperar=True)
+    D.say("Junto con él usaremos tres complementos de la misma familia: flutter_edge_ai_litertlm, el motor que ejecuta los modelos, y flutter_edge_ai_rag y flutter_edge_ai_qdrant, para la búsqueda con Qdrant Edge. Cada uno tiene su página en pub.dev y se instala igual.", esperar=True)
+    D.navegador_cerrar()
+    D.say("Volvemos a VS Code y, en la terminal, agregamos los cuatro juntos con flutter pub add.")
     ia = ["flutter_edge_ai", "flutter_edge_ai_litertlm", "flutter_edge_ai_rag", "flutter_edge_ai_qdrant"]
     D.comando("flutter pub add " + " ".join(ia))
     D.salida("Resolving dependencies...", BLANCO, 1.2)
     D.salida("Downloading packages...", BLANCO, 1.0)
-    for p, v in [("flutter_edge_ai", "2.3.2"), ("flutter_edge_ai_litertlm", "1.13.2"), ("flutter_edge_ai_qdrant", "2.1.0"),
-                 ("flutter_edge_ai_rag", "1.1.0"), ("qdrant_edge", "0.8.0-dev.5")]:
+    for p, v in [("flutter_edge_ai", "2.3.3"), ("flutter_edge_ai_litertlm", "1.13.3"), ("flutter_edge_ai_qdrant", "2.1.0"),
+                 ("flutter_edge_ai_rag", "1.1.1"), ("qdrant_edge", "0.8.0-dev.5")]:
         D.salida_segs([("+ ", G), (f"{p} {v}", BLANCO)], 0.12)
     D.salida("Changed 41 dependencies!", BLANCO, 0.2)
     D.set(files={**D.s.files, "pubspec.yaml": pubspec_con(ia)})
@@ -1890,243 +2365,650 @@ def guion():
     D.atajo("Ctrl + `")
     D.wait(0.4)
 
-    # ---------------------------------------------------------- PASO 4: MODELOS
-    D.capitulo("Paso 4 · Los modelos")
-    D.say("Ahora sí, a programar. En lib creamos la carpeta servicios, y dentro, el archivo modelos.dart. Aquí descargamos los dos modelos de inteligencia artificial.")
-    D.nuevo_archivo("lib/servicios/modelos.dart")
-    b = piezas("lib/servicios/modelos.dart", ["  /// ¿Ya están", "  static Future<void> descargarEmbeddings", "  static Future<void> descargarGemma"])
-    D.escribir(b[0], cps=22)
-    D.resaltar("static const urlGemma", "embeddinggemma-2-text-270m.litertlm';", titulo="Los modelos están en Hugging Face",
-               nota="Gemma 4 E2B: el cerebro · 2.6 GB\nEmbeddingGemma 2: los embeddings · 165 MB\nNo necesitan cuenta ni token",
-               frases=["Guardamos las direcciones de los dos modelos. Están en Hugging Face, la plataforma donde se publican los modelos abiertos, y no necesitan cuenta ni token."])
-    D.escribir(b[1])
-    D.resaltar("static bool get listos", None, titulo="¿Ya están descargados?",
-               frases=["listos nos dice si los dos modelos ya están en el celular, para no descargarlos otra vez."])
-    D.escribir(b[2] + b[3], cps=19)
-    D.guardar()
-    D.resaltar("await FlutterEdgeAi.installEmbedder()", ".install();", titulo="Descargar e instalar",
-               nota="installEmbedder(): el modelo de embeddings\nwithModelProgress: avisa el porcentaje",
-               frases=["installEmbedder descarga EmbeddingGemma, y withModelProgress nos va avisando el porcentaje, para mostrar una barra de progreso."])
-    D.resaltar("await FlutterEdgeAi.installModel(", ").fromNetwork(urlGemma)", titulo="Gemma 4",
-               nota="modelType: gemma4 → cómo habla el modelo\nfileType: litertlm → el motor LiteRT-LM",
-               frases=["Con installModel descargamos Gemma. modelType le dice a la librería que es Gemma 4, y fileType, que es un archivo .litertlm, el formato del motor LiteRT-LM."])
+    # ---------------------------------------------------------- PASO 4: ESTRUCTURA
+    D.capitulo("Paso 4 · Los archivos")
+    D.say("Antes de escribir código, vamos a crear todos los archivos del proyecto, y te explico para qué sirve cada uno. Así tendrás el mapa completo en la cabeza.", esperar=True)
+    for ruta, frase in [
+        ("lib/servicios/modelos.dart", "En lib creamos la carpeta servicios, que es la lógica de YARBYS: no se ve en la pantalla, pero hace todo el trabajo. El primero es modelos.dart, que descarga los dos modelos de inteligencia artificial."),
+        ("lib/servicios/memoria.dart", "memoria.dart guarda las conversaciones en SQLite."),
+        ("lib/servicios/conocimiento.dart", "conocimiento.dart aprende tus documentos y busca en ellos con Qdrant."),
+        ("lib/servicios/cerebro.dart", "cerebro.dart arma el prompt y le pregunta a Gemma."),
+        ("lib/servicios/voz.dart", "voz.dart escucha tu voz y lee las respuestas en voz alta."),
+        ("lib/servicios/ajustes.dart", "Y ajustes.dart guarda las preferencias del usuario y su API key."),
+        ("lib/widgets/nucleo.dart", "En la carpeta widgets va nucleo.dart, el círculo animado de YARBYS. Un widget es una pieza visual que podemos reutilizar."),
+        ("lib/tema.dart", "tema.dart tiene los colores de la app."),
+        ("lib/pantallas/inicio.dart", "Y en la carpeta pantallas, lo que ve el usuario: inicio, que descarga los modelos,"),
+        ("lib/pantallas/chat.dart", "chat, la pantalla principal,"),
+        ("lib/pantallas/documentos.dart", "documentos, para agregar tus archivos,"),
+        ("lib/pantallas/ajustes.dart", "y ajustes."),
+    ]:
+        D.say(frase)
+        D.nuevo_archivo(ruta)
+        D.hold()
+    D.ficha("lib/", "El mapa del proyecto. main.dart ya existía: es el punto de partida, y lo dejamos para el final.", [
+        ("carpeta", "servicios/", "La lógica: modelos · memoria · conocimiento · cerebro · voz · ajustes"),
+        ("carpeta", "widgets/", "nucleo: el círculo animado"),
+        ("carpeta", "pantallas/", "Lo que ve el usuario: inicio · chat · documentos · ajustes"),
+        ("archivo", "tema.dart", "Los colores"),
+        ("archivo", "main.dart", "El punto de partida"),
+    ])
+    D.say("Este es el mapa del proyecto. main.dart ya existía: es el punto de partida, y lo dejaremos para el final.", esperar=True)
+    D.say("Y cada archivo lo escribiremos siempre en el mismo orden: primero para qué sirve, luego sus clases, luego sus métodos, y al final lo que hace cada método por dentro.", esperar=True)
+    D.ficha_ocultar()
 
-    # ---------------------------------------------------------- PASO 5: MEMORIA
-    D.capitulo("Paso 5 · Memoria con SQLite")
-    D.say("Ahora la memoria. Creamos servicios, memoria.dart.")
-    D.nuevo_archivo("lib/servicios/memoria.dart")
-    b = piezas("lib/servicios/memoria.dart", ["class Hilo {", "/// La memoria de YARBYS", "        // Los documentos que YARBYS aprendió", "  static int get _ahora"])
-    D.escribir(b[0])
-    D.resaltar("class Mensaje {", "bool get esUsuario", titulo="Un mensaje",
-               nota="rol: 'usuario' o 'yarbys'\ntexto: lo que se dijo\nfuentes: documentos que usó",
-               frases=["Una clase en Dart es como un molde. Mensaje tiene un rol, que dice quién habló, el texto, y las fuentes: los documentos que YARBYS usó para responder."])
-    D.say("Las clases Hilo y Documento son parecidas; las pego para avanzar más rápido.")
-    D.pegar(b[1])
+    # ---------------------------------------------------------- MODELOS
+    D.capitulo("Paso 5 · modelos.dart")
+    P = Plan("lib/servicios/modelos.dart")
+    D.abrir_desde_explorador(P.ruta)
+    D.ficha("modelos.dart", "Descarga los dos modelos de IA una sola vez. Después, todo funciona sin internet.", [
+        ("clase", "Modelos", "Todo lo de los modelos, en un solo lugar"),
+        ("constante", "urlGemma", "Dónde descargar Gemma 4"),
+        ("constante", "urlEmbeddings", "Dónde descargar EmbeddingGemma"),
+        ("getter", "listos", "¿Ya están en el celular?"),
+        ("método", "descargarEmbeddings()", "Descarga EmbeddingGemma"),
+        ("método", "descargarGemma()", "Descarga Gemma 4"),
+    ])
+    D.say("Empezamos por modelos.dart. A la derecha tienes el mapa de este archivo: una clase, Modelos, con dos direcciones web, una propiedad para saber si los modelos ya están descargados, y dos métodos para descargarlos.", esperar=True)
+    url_g = P.bloque("// El cerebro (LLM)", "gemma-4-E2B-it.litertlm';")
+    url_g = (url_g[0], url_g[1] + 1)
+    url_e = P.bloque("// Los embeddings:", "embeddinggemma-2-text-270m.litertlm';")
+    listos = P.bloque("/// ¿Ya están descargados", "FlutterEdgeAi.hasActiveModel()")
+    listos = (listos[0], listos[1] + 1)
+    c_emb, c_gem = P.cuerpo("static Future<void> descargarEmbeddings"), P.cuerpo("static Future<void> descargarGemma")
+    D.say("Primero escribimos la estructura: la clase y los métodos, todavía vacíos.")
+    D.esqueleto(P, [url_g, url_e, listos, c_emb, c_gem], cps=19)
     D.hold()
-    D.escribir(b[2], cps=21)
-    D.resaltar("final ruta = p.join", "_db = await openDatabase(", titulo="El archivo de la base de datos",
-               nota="getDatabasesPath(): la carpeta de bases de datos de la app\nyarbys.db: un solo archivo",
-               frases=["openDatabase abre el archivo yarbys.db, dentro de la carpeta de la app. Si no existe, lo crea."])
-    D.resaltar("onCreate: (db, version) async {", "fuentes TEXT NOT NULL DEFAULT", titulo="Las tablas (SQL)",
-               nota="onCreate solo corre la primera vez\nhilos: cada conversación\nmensajes: cada mensaje, con el id de su hilo",
-               frases=["onCreate se ejecuta solo la primera vez. Con SQL creamos dos tablas: hilos, con cada conversación, y mensajes, donde cada mensaje guarda el id del hilo al que pertenece."])
-    D.pegar(b[3])
+    D.ficha_explicar(0, "Una clase es como un molde que agrupa datos y funciones. Modelos solo agrupa funciones; por eso todo será static: lo usamos sin crear objetos, por ejemplo Modelos.descargarGemma.", "class Modelos {")
+    D.ficha_explicar(4, "descargarEmbeddings recibe una función, progreso, a la que le avisaremos el porcentaje de la descarga. Es async porque descargar toma tiempo, y así la app no se congela mientras espera.", "static Future<void> descargarEmbeddings")
+    D.ficha_explicar(5, "descargarGemma es igual, pero para Gemma 4. Future<void> significa que el método termina más tarde y no devuelve ningún valor.", "static Future<void> descargarGemma")
+    D.ficha_ver(1)
+    D.say("Ahora necesitamos las direcciones de los modelos. ¿De dónde las sacamos?", esperar=True)
+    D.ficha_ocultar()
+    D.slide(SlideHTML("hf", {"nombre": "Gemma 4 E2B", "busqueda": "gemma-4-E2B-it-litert-lm", "cuenta": "litert-community",
+                             "repo": "gemma-4-E2B-it-litert-lm", "version": "main", "version_txt": "la versión más reciente",
+                             "archivo": "gemma-4-E2B-it.litertlm", "peso": "2.6 GB",
+                             "nota": "Si el enlace copiado termina en ?download=true, puedes quitar esa parte"}), frases=[
+        "Los modelos abiertos se publican en Hugging Face, la plataforma donde Google y otras empresas comparten sus modelos.",
+        "Entras a huggingface.co, buscas gemma-4-E2B-it-litert-lm y abres el modelo de la cuenta litert-community. En la pestaña Files and versions está el archivo gemma-4-E2B-it.litertlm, de 2.6 gigas. Haces clic derecho en su botón de descarga y copias la dirección del enlace.",
+        "Fíjate en las partes del enlace: el sitio, quién lo publica, el nombre del modelo, la palabra resolve, que significa descargar, la versión, que aquí es main, la más reciente, y el nombre del archivo.",
+    ])
+    paso(D, P, 1, url_g, "Volvemos a VS Code y creamos la constante urlGemma. La dirección no la escribimos a mano: la pegamos.")
+    D.slide(SlideHTML("hf", {"nombre": "EmbeddingGemma 2", "busqueda": "embeddinggemma-2-text-270m-litert-lm", "cuenta": "litert-community",
+                             "repo": "embeddinggemma-2-text-270m-litert-lm", "version": "9be6e8b9...dbac7",
+                             "version_txt": "una versión exacta (commit)", "archivo": "embeddinggemma-2-text-270m.litertlm", "peso": "165 MB"}), frases=[
+        "Para EmbeddingGemma es igual: buscas embeddinggemma-2-text-270m-litert-lm y copias el enlace del archivo .litertlm, de 165 megas.",
+        "Pero hay un detalle. En vez de main, usamos un código de versión exacta, llamado commit. Así, si algún día publican otro archivo con el mismo nombre, YARBYS sigue usando exactamente el mismo modelo.",
+        "¿Y qué código usamos? El que recomienda la documentación del paquete. Vamos a verla.",
+    ])
+    D.set(mouse=(900, 500))
+    D.navegador_abrir()
+    D.navegador_ir("pub.dev/packages/flutter_edge_ai_litertlm", "pub_litertlm")
+    D.say("En la página de flutter_edge_ai_litertlm, en la sección EmbeddingGemma 2...")
+    D.navegador_desplazar("eg2", 1.4)
     D.hold()
-    D.say("Y pego también la tabla de documentos y las funciones para leer y guardar; son consultas sencillas.")
-    D.pegar(b[4])
+    D.navegador_marcar("codigo_eg2", 0.6)
+    D.say("...está el código de versión, en la constante revision, y debajo el enlace del modelo, escrito en tres partes.", esperar=True)
+    D.say("Para tener la dirección completa, juntamos las tres partes y cambiamos signo de dólar revision por ese código. O, más fácil: en Hugging Face, en el historial de versiones del modelo, abres esa versión y copias el enlace de descarga del archivo, igual que con Gemma.", esperar=True)
+    D.navegador_cerrar()
+    paso(D, P, 2, url_e, "Y lo pegamos en la constante urlEmbeddings.")
+    paso(D, P, 3, listos, "Ahora listos: nos dice si los dos modelos ya están en el celular, para no descargarlos otra vez.",
+         despues=[("FlutterEdgeAi.hasActiveModel()", None, "Una línea", "=> devuelve el resultado directamente\n&& : los dos tienen que estar listos",
+                   "La flecha devuelve el resultado directamente. hasActiveModel revisa Gemma, hasActiveEmbedder revisa EmbeddingGemma, y con el doble ampersand, los dos tienen que estar listos.")])
+    paso(D, P, 4, c_emb, "Implementamos descargarEmbeddings.", cps=20,
+         despues=[("await FlutterEdgeAi.installEmbedder()", ".install();", "Descargar e instalar",
+                   "installEmbedder(): el modelo de embeddings\nmodelFromNetwork: desde la URL\nwithModelProgress: avisa el %",
+                   "installEmbedder prepara la instalación del modelo de embeddings, modelFromNetwork le dice que lo baje de nuestra URL, withModelProgress nos avisa el porcentaje, e install lo descarga. Con await esperamos a que termine.")])
+    paso(D, P, 5, c_gem, "Y descargarGemma.", cps=20,
+         despues=[("await FlutterEdgeAi.installModel(", ").fromNetwork(urlGemma)", "Gemma 4",
+                   "modelType: gemma4 → cómo habla el modelo\nfileType: litertlm → el motor LiteRT-LM",
+                   "installModel es lo mismo para el LLM. modelType le dice a la librería que es Gemma 4, y fileType, que es un archivo .litertlm, el formato del motor LiteRT-LM.")])
     D.guardar()
-    D.verificar("lib/servicios/memoria.dart")
-    D.resaltar("static Future<void> guardar(int hilo", "});", titulo="Guardar un mensaje",
-               nota="insert: agrega una fila a la tabla mensajes",
-               frases=["guardar inserta una fila nueva en la tabla mensajes."])
-    D.resaltar("static Future<List<Mensaje>> mensajes(", "limit: ultimos,", titulo="Los últimos mensajes",
-               nota="orderBy id DESC + limit: los más recientes\nLuego los volteamos (reversed) para leerlos en orden",
-               frases=["Y mensajes trae los mensajes de un hilo. Con limit pedimos solo los últimos, y luego los volteamos para tenerlos en orden. Así le daremos memoria a YARBYS."])
+    D.verificar(P.ruta)
+    fin_archivo(D, "Y modelos.dart está completo.")
 
-    # ---------------------------------------------------------- PASO 6: CONOCIMIENTO
-    D.capitulo("Paso 6 · RAG con Qdrant Edge")
-    D.say("Sigue el conocimiento: tus documentos en Qdrant. Creamos servicios, conocimiento.dart.")
-    D.nuevo_archivo("lib/servicios/conocimiento.dart")
-    b = piezas("lib/servicios/conocimiento.dart", ["  /// Corta un texto largo", "  /// Aprende un documento", "  static Future<void> olvidar",
-                                                   "  /// Búsqueda semántica", "  /// El nombre del documento"])
-    D.escribir(b[0], cps=21)
-    D.resaltar("final rag = FlutterEdgeAiRag(", "providers: const [QdrantVectorStoreProvider()]", titulo="Qdrant Edge",
-               nota="FlutterEdgeAiRag: el sistema de RAG\nQdrantVectorStoreProvider: guarda los vectores con Qdrant Edge",
-               frases=["FlutterEdgeAiRag es el sistema de RAG, y le decimos que guarde los vectores con Qdrant Edge."])
-    D.resaltar("_indice = await rag.open(", "embedder: FlutterEdgeAiActiveEmbedder", titulo="Abrir el índice",
-               nota="location: una carpeta dentro de la app\nembedder: EmbeddingGemma crea los vectores",
-               frases=["Abrimos el índice en una carpeta de la app, y le indicamos que EmbeddingGemma será quien convierta los textos en vectores."])
-    D.say("Ahora la función que corta los documentos en fragmentos. La pego y la explico.")
-    D.pegar(b[1])
-    D.resaltar("for (final parrafo in texto.split", "fragmentos.add(actual);", titulo="Fragmentar",
-               nota="Separa por párrafos (líneas en blanco)\nVa juntando párrafos hasta unos 800 caracteres",
-               frases=["Separamos el texto por párrafos, y los vamos juntando hasta llegar a unos 800 caracteres. Cuando no cabe uno más, guardamos el fragmento y empezamos otro."])
-    D.escribir(b[2], cps=20)
-    D.resaltar("final partes = fragmentar(texto);", "metadata: jsonEncode", titulo="Aprender un documento",
-               nota="1. Fragmenta el texto\n2. Guarda el documento en SQLite\n3. add(): crea el vector y lo guarda en Qdrant",
-               frases=["aprender fragmenta el texto y anota el documento en SQLite. Luego, por cada fragmento, add crea su vector con EmbeddingGemma y lo guarda en Qdrant, junto con el nombre del documento."])
-    D.resaltar("await _indice.flush();", None, frases=["Y flush guarda los cambios en el disco."])
-    D.pegar(b[3])
+    # ---------------------------------------------------------- MEMORIA
+    D.capitulo("Paso 6 · memoria.dart")
+    P = Plan("lib/servicios/memoria.dart")
+    D.abrir_desde_explorador(P.ruta)
+    D.ficha("memoria.dart", "La memoria de YARBYS: guarda y lee las conversaciones en una base de datos SQLite.", [
+        ("clase", "Mensaje", "Un mensaje: quién habló, qué dijo y qué documentos usó"),
+        ("clase", "Hilo", "Una conversación"),
+        ("clase", "Documento", "Un documento que YARBYS aprendió"),
+        ("clase", "Memoria", "La base de datos"),
+        ("método", "abrir()", "Abre el archivo y crea las tablas"),
+        ("método", "nuevoHilo() · hilos() · borrarHilo() · borrarTodo()", "Crear, listar y borrar conversaciones"),
+        ("método", "guardar() · mensajes()", "Guardar y leer mensajes"),
+        ("método", "guardarDocumento() · documentos()", "Anotar los documentos aprendidos"),
+    ])
+    D.say("Seguimos con memoria.dart. Tendrá cuatro clases: tres pequeñas que representan los datos —un mensaje, un hilo o conversación, y un documento—, y la clase Memoria, que los guarda y los lee de SQLite.", esperar=True)
+    c_abrir = P.cuerpo("static Future<void> abrir()")
+    m_nuevo = P.bloque("static Future<int> nuevoHilo", "_db.insert('hilos'")
+    m_nuevo = (m_nuevo[0], m_nuevo[1] + 1)
+    c_hilos = P.cuerpo("static Future<List<Hilo>> hilos()")
+    c_bhilo = P.cuerpo("static Future<void> borrarHilo")
+    c_btodo = P.cuerpo("static Future<void> borrarTodo")
+    m_guardar = P.bloque("static Future<void> guardar(int hilo", "});")
+    m_guardar = (m_guardar[0], m_guardar[1] + 1)
+    c_mensajes = P.cuerpo("static Future<List<Mensaje>> mensajes(")
+    m_gdoc = P.bloque("static Future<int> guardarDocumento", "});")
+    m_gdoc = (m_gdoc[0], m_gdoc[1] + 1)
+    c_docs = P.cuerpo("static Future<List<Documento>> documentos()")
+    m_bdoc = P.bloque("static Future<void> borrarDocumento", "_db.delete('documentos'")
+    m_bdoc = (m_bdoc[0] - 1, m_bdoc[1])   # con la línea en blanco de arriba
+    D.say("Escribimos la estructura. Las tres clases de datos son cortas: solo tienen sus campos y un constructor.")
+    D.esqueleto(P, [c_abrir, m_nuevo, c_hilos, c_bhilo, c_btodo, m_guardar, c_mensajes, m_gdoc, c_docs, m_bdoc], cps=22)
     D.hold()
-    D.escribir(b[4], cps=20)
-    D.resaltar("return _indice.search(", "threshold: 0.3,", titulo="Búsqueda semántica",
-               nota="topK: 3 → los 3 fragmentos más parecidos\nthreshold: descarta los poco parecidos",
-               frases=["Y la búsqueda: search convierte la pregunta en vector y nos devuelve los tres fragmentos más parecidos. threshold descarta los que se parecen muy poco."])
-    D.pegar(b[5])
+    D.ficha_explicar(0, "Mensaje tiene tres campos: el rol, que dice quién habló, el texto, y las fuentes. final significa que no cambian después de crearse. La línea de arriba es el constructor: la forma de crear un mensaje.", "class Mensaje {")
+    D.ficha_explicar(0, "Y esUsuario es un getter: una propiedad calculada que nos dice si el mensaje lo escribió el usuario.", "bool get esUsuario")
+    D.ficha_explicar(1, "Hilo es una conversación, con su id y un título.", "class Hilo {")
+    D.ficha_explicar(2, "Y Documento guarda el nombre del archivo y en cuántos fragmentos lo cortamos.", "class Documento {")
+    D.ficha_explicar(3, "La clase Memoria guarda la conexión con la base de datos en _db. El guion bajo la hace privada: solo se usa dentro de este archivo.", "static late Database _db;")
+    D.ficha_explicar(4, "abrir abre la base de datos al arrancar la app.", "static Future<void> abrir()")
+    D.ficha_explicar(5, "Y estos métodos trabajan con los hilos: listarlos, borrar uno o borrarlos todos.", "static Future<List<Hilo>> hilos()")
+    D.ficha_explicar(6, "mensajes lee los mensajes de un hilo.", "static Future<List<Mensaje>> mensajes(")
+    paso(D, P, 4, c_abrir, "Implementamos abrir.", cps=22,
+         despues=[("final ruta = p.join", "_db = await openDatabase(", "El archivo de la base de datos",
+                   "getDatabasesPath(): la carpeta de bases de datos de la app\nyarbys.db: un solo archivo",
+                   "Armamos la ruta del archivo yarbys.db, dentro de la carpeta de la app, y openDatabase lo abre. Si no existe, lo crea."),
+                  ("onCreate: (db, version) async {", "fuentes TEXT NOT NULL DEFAULT", "Las tablas (SQL)",
+                   "onCreate solo corre la primera vez\nhilos: cada conversación\nmensajes: cada mensaje, con el id de su hilo",
+                   "onCreate se ejecuta solo la primera vez. Con el lenguaje SQL creamos las tablas: hilos, con cada conversación, y mensajes, donde cada mensaje guarda el id del hilo al que pertenece. La tabla documentos es igual.")])
+    paso(D, P, 5, m_nuevo, "Ahora los hilos. nuevoHilo crea una conversación con insert, que agrega una fila a la tabla, y devuelve su id.", cps=22)
+    paso(D, P, 5, c_hilos, "hilos los lee todos con query, del más nuevo al más viejo, y convierte cada fila en un Hilo.", cps=22)
+    paso(D, P, 5, c_bhilo, "borrarHilo borra sus mensajes y luego el hilo.", modo="pegar")
+    paso(D, P, 5, c_btodo, "Y borrarTodo vacía las dos tablas.", modo="pegar")
+    paso(D, P, 6, m_guardar, "guardar inserta un mensaje en la tabla mensajes. Las fuentes las unimos con una barra vertical, porque SQLite guarda texto.", cps=22)
+    paso(D, P, 6, c_mensajes, "Y mensajes es el que le da memoria a YARBYS.", cps=22,
+         despues=[("orderBy: 'id DESC',", "limit: ultimos,", "Los últimos mensajes",
+                   "orderBy id DESC + limit: los más recientes\nreversed: los ponemos en orden",
+                   "Pide los mensajes del hilo del más nuevo al más viejo, y con limit solo los últimos. Luego los volteamos con reversed para leerlos en orden, y convertimos cada fila en un Mensaje.")])
+    paso(D, P, 7, m_gdoc, "Los métodos de documentos son iguales a los de hilos; los pego.", modo="pegar")
+    D.completar(P, c_docs, modo="pegar")
+    D.completar(P, m_bdoc, modo="pegar")
     D.guardar()
-    D.verificar("lib/servicios/conocimiento.dart")
+    D.verificar(P.ruta)
+    fin_archivo(D, "Memoria lista.")
+
+    # ---------------------------------------------------------- CONOCIMIENTO
+    D.capitulo("Paso 7 · conocimiento.dart")
+    P = Plan("lib/servicios/conocimiento.dart")
+    D.abrir_desde_explorador(P.ruta)
+    D.ficha("conocimiento.dart", "Lo que YARBYS sabe de ti: tus documentos convertidos en vectores y guardados en Qdrant Edge.", [
+        ("clase", "Conocimiento", "El RAG de YARBYS"),
+        ("campo", "_indice", "El índice de Qdrant"),
+        ("constante", "_perfil", "El tipo de vectores de EmbeddingGemma 2"),
+        ("método", "abrir()", "Abre Qdrant con EmbeddingGemma"),
+        ("método", "fragmentar()", "Corta un texto en pedazos"),
+        ("método", "aprender()", "Guarda un documento como vectores"),
+        ("método", "olvidar()", "Borra un documento"),
+        ("método", "buscar()", "Búsqueda semántica"),
+        ("método", "origen()", "De qué documento salió un fragmento"),
+    ])
+    D.say("Sigue conocimiento.dart: aquí vive el RAG. La clase Conocimiento guarda tus documentos en Qdrant y busca en ellos.", esperar=True)
+    cs = {n: P.cuerpo(f) for n, f in [("abrir", "static Future<void> abrir()"), ("fragmentar", "static List<String> fragmentar("),
+                                       ("aprender", "static Future<int> aprender("), ("olvidar", "static Future<void> olvidar("),
+                                       ("buscar", "static Future<List<RetrievalResult>> buscar("), ("origen", "static String origen(")]}
+    D.esqueleto(P, list(cs.values()), cps=22)
     D.hold()
+    D.ficha_explicar(1, "_indice es el índice de Qdrant, donde están los vectores. late significa que le daremos valor más tarde, en abrir.", "static late RagIndex _indice;")
+    D.ficha_explicar(2, "_perfil identifica el tipo de vectores que crea EmbeddingGemma 2. Qdrant lo guarda para no mezclar vectores de modelos distintos.", "static const _perfil")
+    D.ficha_explicar(4, "fragmentar recibe un texto y devuelve una lista de fragmentos.", "static List<String> fragmentar(")
+    D.ficha_explicar(5, "aprender recibe el nombre y el texto de un documento, y devuelve cuántos fragmentos guardó.", "static Future<int> aprender(")
+    D.ficha_explicar(7, "Y buscar recibe la pregunta y devuelve los fragmentos más parecidos.", "static Future<List<RetrievalResult>> buscar(")
+    paso(D, P, 3, cs["abrir"], "Implementamos abrir.", cps=22,
+         despues=[("final rag = FlutterEdgeAiRag(", "providers: const [QdrantVectorStoreProvider()]", "Qdrant Edge",
+                   "FlutterEdgeAiRag: el sistema de RAG\nQdrantVectorStoreProvider: los vectores van en Qdrant Edge",
+                   "FlutterEdgeAiRag es el sistema de RAG, y le decimos que guarde los vectores con Qdrant Edge."),
+                  ("_indice = await rag.open(", "embedder: FlutterEdgeAiActiveEmbedder", "Abrir el índice",
+                   "location: una carpeta dentro de la app\nembedder: EmbeddingGemma crea los vectores",
+                   "Abrimos el índice en una carpeta de la app, y le indicamos que EmbeddingGemma será quien convierta los textos en vectores.")])
+    paso(D, P, 4, cs["fragmentar"], "fragmentar es un poco más largo; lo pego y lo explicamos.", modo="pegar",
+         despues=[("for (final parrafo in texto.split", "fragmentos.add(actual);", "Fragmentar",
+                   "Separa por párrafos (líneas en blanco)\nVa juntando párrafos hasta unos 800 caracteres",
+                   "Separamos el texto por párrafos y los vamos juntando hasta llegar a unos 800 caracteres. Cuando no cabe uno más, guardamos el fragmento y empezamos otro."),
+                  ("while (limpio.length > maximo) {", "limpio = limpio.substring(corte).trim();", "Párrafos gigantes",
+                   None, "Y si un párrafo solo ya es muy largo, lo cortamos en el último espacio antes del límite, para no partir una palabra.")])
+    paso(D, P, 5, cs["aprender"], "Ahora aprender.", cps=21,
+         despues=[("final partes = fragmentar(texto);", "metadata: jsonEncode", "Aprender un documento",
+                   "1. Fragmenta el texto\n2. Lo anota en SQLite\n3. add(): crea el vector y lo guarda en Qdrant",
+                   "Fragmentamos el texto y anotamos el documento en SQLite. Luego, por cada fragmento, add crea su vector con EmbeddingGemma y lo guarda en Qdrant, junto con el nombre del documento."),
+                  ("await _indice.flush();", None, None, None, "Y flush guarda los cambios en el disco.")])
+    paso(D, P, 6, cs["olvidar"], "olvidar hace lo contrario: borra los fragmentos del documento. Lo pego.", modo="pegar")
+    paso(D, P, 7, cs["buscar"], "Y buscar.", cps=21,
+         despues=[("return _indice.search(", "threshold: 0.3,", "Búsqueda semántica",
+                   "topK: 3 → los 3 fragmentos más parecidos\nthreshold: descarta los poco parecidos",
+                   "search convierte la pregunta en vector y nos devuelve los tres fragmentos más parecidos. threshold descarta los que se parecen muy poco.")])
+    paso(D, P, 8, cs["origen"], "origen lee el nombre del documento desde los datos que guardamos con el fragmento.", modo="pegar")
+    D.guardar()
+    D.verificar(P.ruta)
+    fin_archivo(D, "Conocimiento listo.")
 
-    # ---------------------------------------------------------- PASO 7: CEREBRO
-    D.capitulo("Paso 7 · El cerebro")
-    D.say("Llegamos al cerebro. Creamos servicios, cerebro.dart.")
-    D.nuevo_archivo("lib/servicios/cerebro.dart")
-    b = piezas("lib/servicios/cerebro.dart", ["  /// Arma el prompt", "  /// Devuelve la respuesta", "  // --- 2. LLM externo"])
-    D.escribir(b[0], cps=21)
-    D.resaltar("static const sistema = '''", "Si no sabes algo", titulo="La personalidad",
-               nota="Las instrucciones de sistema: quién es y cómo responde\nMáximo 3 oraciones y sin markdown: se leen en voz alta",
-               frases=["Primero, la personalidad de YARBYS. Son las instrucciones de sistema: le decimos quién es, que responda en español, en máximo tres oraciones y sin formato, porque se leen en voz alta."])
-    D.escribir(b[1], cps=21)
-    D.resaltar("final b = StringBuffer();", "b.write('Pregunta del usuario: $pregunta');", titulo="Armar el prompt",
-               nota="1. Los fragmentos de tus documentos\n2. La conversación hasta ahora\n3. Tu pregunta",
-               frases=["armarPrompt construye el mensaje que verá Gemma: primero los fragmentos de tus documentos, luego la conversación reciente y al final tu pregunta. Exactamente lo que vimos en la parte de RAG."])
-    D.escribir(b[2], cps=20)
+    # ---------------------------------------------------------- CEREBRO
+    D.capitulo("Paso 8 · cerebro.dart")
+    P = Plan("lib/servicios/cerebro.dart")
+    D.abrir_desde_explorador(P.ruta)
+    D.ficha("cerebro.dart", "El cerebro: arma el prompt y responde con Gemma 4 en el celular, o con un LLM externo si el usuario lo activa.", [
+        ("clase", "Cerebro", ""),
+        ("constante", "sistema", "La personalidad de YARBYS"),
+        ("método", "armarPrompt()", "Documentos + historial + pregunta"),
+        ("método", "responder()", "Elige: local o externo"),
+        ("método", "_local()", "Gemma 4 dentro del celular"),
+        ("método", "_externo()", "OpenAI o Anthropic (opcional)"),
+        ("método", "_leer()", "Lee la respuesta de la API"),
+    ])
+    D.say("Llegamos al cerebro. La clase Cerebro tiene la personalidad de YARBYS y los métodos para armar el prompt y responder.", esperar=True)
+    sis = P.bloque("// La personalidad de YARBYS", "Si no sabes algo")
+    sis = (sis[0], sis[1] + 1)
+    cs = {n: P.cuerpo(f) for n, f in [("armar", "static String armarPrompt("), ("responder", "static Stream<String> responder("),
+                                       ("local", "static Stream<String> _local("), ("externo", "static Stream<String> _externo("),
+                                       ("leer", "static Map<String, dynamic> _leer(")]}
+    D.esqueleto(P, [sis] + list(cs.values()), cps=22)
+    D.hold()
+    D.ficha_explicar(2, "armarPrompt recibe la pregunta, los fragmentos encontrados, y el historial de la conversación, y devuelve el texto completo que leerá Gemma.", "static String armarPrompt(")
+    D.ficha_explicar(3, "responder devuelve un Stream: un flujo de datos que llega en pedacitos. Así recibimos la respuesta token por token.", "static Stream<String> responder(")
+    D.ficha_explicar(4, "_local responde con Gemma, dentro del celular. async con asterisco significa que va entregando valores poco a poco.", "static Stream<String> _local(")
+    D.ficha_explicar(5, "Y _externo usa un LLM de internet. Es opcional.", "static Stream<String> _externo(")
+    paso(D, P, 1, sis, "Primero la personalidad: las instrucciones de sistema.", cps=24,
+         despues=[("static const sistema = '''", "Si no sabes algo", "La personalidad",
+                   "Quién es y cómo responde\nMáximo 3 oraciones y sin markdown: se leen en voz alta",
+                   "Le decimos quién es, que responda en español, en máximo tres oraciones y sin formato, porque las respuestas se leen en voz alta.")])
+    paso(D, P, 2, cs["armar"], "Ahora armarPrompt.", cps=22,
+         despues=[("final b = StringBuffer();", "b.write('Pregunta del usuario: $pregunta');", "Armar el prompt",
+                   "1. Los fragmentos de tus documentos\n2. La conversación hasta ahora\n3. Tu pregunta",
+                   "StringBuffer va juntando texto. Primero escribimos los fragmentos de tus documentos, luego la conversación reciente, y al final la pregunta. Exactamente lo que vimos en la parte de RAG.")])
+    paso(D, P, 3, cs["responder"], "responder elige el cerebro.", cps=20,
+         despues=[("return Ajustes.usarNube", None, "¿Local o externo?", None,
+                   "Si el usuario activó la nube, usa el LLM externo; si no, Gemma en el celular. Ese signo de pregunta es un if en una sola línea.")])
+    paso(D, P, 4, cs["local"], "Y _local, la parte más importante.", cps=21,
+         despues=[("final modelo = await FlutterEdgeAi.getActiveModel", "maxOutputTokens: 512,", "Gemma 4",
+                   "maxTokens: 4096 → el contexto (lo que puede leer)\nmaxOutputTokens: 512 → largo máximo de la respuesta",
+                   "getActiveModel carga Gemma en la memoria. maxTokens es cuánto texto puede leer a la vez: el contexto. Y createChat crea la conversación con la personalidad y un máximo de 512 tokens de respuesta."),
+                  ("await chat.addQueryChunk", "if (respuesta is TextResponse) yield", "Token por token",
+                   "isUser: true → lo escribió el usuario\nyield: entrega cada token apenas llega",
+                   "Le enviamos el prompt, y con yield entregamos cada token apenas Gemma lo genera. Al final, en finally, cerramos el chat.")])
+    paso(D, P, 5, cs["externo"], "La parte del LLM externo es opcional. La pego y te explico lo importante.", modo="pegar",
+         despues=[("final clave = await Ajustes.leerClave();", "throw Exception", "Tu propia API key",
+                   "El usuario pega su API key en Ajustes\nNunca va escrita en el código",
+                   "La API key la escribe cada usuario en la app; nunca va escrita en el código."),
+                  ("Uri.parse('https://api.anthropic.com/v1/messages')", "'max_tokens': 512,", "Anthropic u OpenAI",
+                   "Claude Haiku con la API de Anthropic\nGPT-6 Luna con la API de OpenAI",
+                   "Con el paquete http enviamos el mismo prompt a Anthropic, para Claude Haiku, o a OpenAI, para GPT-6 Luna. El resto de la app no cambia.")])
+    paso(D, P, 6, cs["leer"], "Y _leer convierte la respuesta en datos, o lanza un error si algo falló.", modo="pegar")
     D.guardar()
-    D.resaltar("static Stream<String> responder", "return Ajustes.usarNube", titulo="¿Local o externo?",
-               nota="Stream: la respuesta llega en pedacitos\nPor defecto: Gemma 4 en el celular",
-               frases=["responder devuelve un Stream: un flujo de datos que llega en pedacitos, token por token. Si el usuario no activó la nube, usamos Gemma en el celular."])
-    D.resaltar("final modelo = await FlutterEdgeAi.getActiveModel", "maxOutputTokens: 512,", titulo="Gemma 4",
-               nota="maxTokens: 4096 → el contexto (lo que puede leer)\nmaxOutputTokens: 512 → largo máximo de la respuesta",
-               frases=["getActiveModel carga Gemma en la memoria. maxTokens es cuánto texto puede leer a la vez, el contexto. Y createChat crea la conversación con la personalidad y un máximo de 512 tokens de respuesta."])
-    D.resaltar("await chat.addQueryChunk", "if (respuesta is TextResponse) yield", titulo="Token por token",
-               nota="isUser: true → lo escribió el usuario\nyield: entrega cada token apenas llega",
-               frases=["Le enviamos el prompt, y con yield vamos entregando cada token apenas Gemma lo genera. Al final, cerramos el chat."])
-    D.say("La parte del LLM externo es opcional. La pego y te explico lo importante.")
-    D.pegar(b[3])
-    D.guardar()
-    D.verificar("lib/servicios/cerebro.dart")
-    D.resaltar("final clave = await Ajustes.leerClave();", "throw Exception", titulo="Tu propia API key",
-               nota="El usuario pega su API key en Ajustes\nNunca va escrita en el código",
-               frases=["La API key la escribe cada usuario en la app; nunca va escrita en el código."])
-    D.resaltar("Uri.parse('https://api.anthropic.com/v1/messages')", "'max_tokens': 512,", titulo="Anthropic o OpenAI",
-               nota="Claude Haiku con la API de Anthropic\nGPT-6 Luna con la API de OpenAI\nMismo prompt, mismo sistema",
-               frases=["Con el paquete http enviamos el mismo prompt a Anthropic, para Claude Haiku, o a OpenAI, para GPT-6 Luna. El resto de la app no cambia nada."])
+    D.verificar(P.ruta)
+    fin_archivo(D, "El cerebro está completo.")
 
-    # ---------------------------------------------------------- PASO 8: VOZ Y AJUSTES
-    D.capitulo("Paso 8 · Voz y ajustes")
-    D.say("Ahora la voz. Creamos servicios, voz.dart, y pego el código.")
-    D.nuevo_archivo("lib/servicios/voz.dart")
-    D.pegar(leer("lib/servicios/voz.dart"))
+    # ---------------------------------------------------------- VOZ
+    D.capitulo("Paso 9 · voz.dart y ajustes.dart")
+    P = Plan("lib/servicios/voz.dart")
+    D.abrir_desde_explorador(P.ruta)
+    D.ficha("voz.dart", "Los oídos y la boca de YARBYS, con los motores de voz del propio celular.", [
+        ("clase", "Voz", ""),
+        ("campo", "_oido · _boca", "SpeechToText (voz → texto) y FlutterTts (texto → voz)"),
+        ("campo", "alDejarDeEscuchar", "Aviso cuando se apaga el micrófono"),
+        ("método", "escuchar()", "Escucha y devuelve el texto en vivo"),
+        ("método", "dejarDeEscuchar()", ""),
+        ("método", "hablar()", "Lee un texto en voz alta"),
+        ("método", "callar()", ""),
+    ])
+    D.say("Ahora la voz. La clase Voz tiene un oído, que convierte tu voz en texto, y una boca, que lee en voz alta.", esperar=True)
+    c_esc = P.cuerpo("static Future<bool> escuchar(")
+    m_dejar = P.bloque("static Future<void> dejarDeEscuchar()")
+    m_dejar = (m_dejar[0], m_dejar[1] + 1)
+    c_hablar = P.cuerpo("static Future<void> hablar(")
+    m_callar = P.bloque("static Future<void> callar()")
+    m_callar = (m_callar[0] - 1, m_callar[1])
+    D.esqueleto(P, [c_esc, m_dejar, c_hablar, m_callar], cps=23)
+    D.hold()
+    D.ficha_explicar(1, "_oido es un SpeechToText y _boca un FlutterTts: vienen de los dos paquetes de voz que instalamos.", "static final _oido = SpeechToText();")
+    D.ficha_explicar(2, "alDejarDeEscuchar es una función que la pantalla del chat nos dará, para avisarle cuando el micrófono se apague.", "static void Function()? alDejarDeEscuchar;")
+    D.ficha_explicar(3, "escuchar recibe la función alOir, a la que le pasaremos el texto mientras hablas, y devuelve false si no hay permiso de micrófono.", "static Future<bool> escuchar(")
+    paso(D, P, 3, c_esc, "Implementamos escuchar; lo pego y lo vemos por partes.", modo="pegar",
+         despues=[("if (!_oidoListo) {", "_idioma = delSistema.localeId;", "La primera vez",
+                   "initialize: pide el permiso del micrófono\nsystemLocale: usa el español del celular",
+                   "La primera vez, initialize prepara el reconocimiento de voz y pide el permiso del micrófono. Y si el celular está en español, usamos su idioma."),
+                  ("await _oido.listen(", "pauseFor: const Duration(seconds: 3),", "Escuchar",
+                   "partialResults: muestra el texto mientras hablas\npauseFor: 3 segundos de silencio y termina",
+                   "listen escucha, nos va pasando el texto mientras hablas, y termina cuando te quedas en silencio tres segundos.")])
+    paso(D, P, 4, m_dejar, "dejarDeEscuchar apaga el micrófono.", cps=22)
+    paso(D, P, 5, c_hablar, "Y hablar.", cps=21,
+         despues=[("if (!_bocaLista) {", "await _boca.speak(texto);", "Hablar",
+                   "setLanguage: en español\nawaitSpeakCompletion: esperar a que termine",
+                   "La primera vez configuramos la boca en español, y le pedimos que espere a terminar de hablar. Luego speak lee el texto.")])
+    paso(D, P, 6, m_callar, "Y callar la detiene.", cps=22)
     D.guardar()
-    D.resaltar("static final _oido = SpeechToText();", "static final _boca = FlutterTts();", titulo="Oídos y boca",
-               nota="SpeechToText: tu voz → texto\nFlutterTts: texto → voz",
-               frases=["Tenemos dos piezas: el oído, SpeechToText, que convierte tu voz en texto, y la boca, FlutterTts, que lee en voz alta."])
-    D.resaltar("await _oido.listen(", "pauseFor: const Duration(seconds: 3),", titulo="Escuchar",
-               nota="partialResults: muestra el texto mientras hablas\npauseFor: 3 segundos de silencio y termina",
-               frases=["listen escucha en español, nos va mostrando el texto mientras hablas, y termina cuando te quedas en silencio tres segundos."])
-    D.resaltar("static Future<void> hablar(String texto)", "await _boca.speak(texto);", titulo="Hablar",
-               frases=["Y hablar lee la respuesta en voz alta, y espera a que termine."])
-    D.say("Y servicios, ajustes.dart: aquí se guardan las preferencias.")
-    D.nuevo_archivo("lib/servicios/ajustes.dart")
-    D.pegar(leer("lib/servicios/ajustes.dart"))
-    D.guardar()
-    D.resaltar("static const _cofre = FlutterSecureStorage();", None, titulo="Guardado cifrado",
-               nota="Keystore en Android, Keychain en iPhone",
-               frases=["Usamos FlutterSecureStorage, que guarda los datos cifrados: en Android con Keystore y en iPhone con Keychain. Ideal para la API key."])
-    D.resaltar("static bool usarNube = false;", "static bool hablar = true;", titulo="Por defecto: 100% local",
-               frases=["usarNube empieza en false: por defecto, YARBYS es cien por ciento local."])
-    D.resaltar("// Versión Pro:", "static bool esPro = true;", titulo="La versión Pro",
-               nota="Aquí conectarías una compra única\n(paquete in_app_purchase)",
-               frases=["Y esPro es el interruptor de la versión Pro. Aquí conectarías una compra dentro de la app; en este proyecto viene desbloqueada."])
+    D.verificar(P.ruta)
+    D.ficha_ocultar()
 
-    # ---------------------------------------------------------- PASO 9: INTERFAZ
-    D.capitulo("Paso 9 · El núcleo de YARBYS")
-    D.say("Pasemos a la interfaz. Primero tema.dart, con los colores de la app: fondos oscuros y planos. Lo pego.")
-    D.nuevo_archivo("lib/tema.dart")
-    D.pegar(leer("lib/tema.dart"))
+    P = Plan("lib/servicios/ajustes.dart")
+    D.abrir_desde_explorador(P.ruta)
+    D.ficha("ajustes.dart", "Las preferencias del usuario, guardadas cifradas en el celular.", [
+        ("clase", "Ajustes", ""),
+        ("constante", "_cofre", "FlutterSecureStorage: guardado cifrado"),
+        ("campo", "usarNube · proveedor · modeloNube · hablar", "Las preferencias"),
+        ("campo", "esPro", "El interruptor de la versión Pro"),
+        ("método", "cargar() · guardar()", "Leer y escribir el cofre"),
+        ("método", "leerClave() · guardarClave()", "La API key"),
+        ("getter", "nombreCerebro", "Qué cerebro está respondiendo"),
+    ])
+    D.say("Y ajustes.dart guarda las preferencias.", esperar=True)
+    c_cargar, c_guardar = P.cuerpo("static Future<void> cargar()"), P.cuerpo("static Future<void> guardar()")
+    claves = P.bloque("// La API key nunca", "value: clave.trim());")
+    claves = (claves[0], claves[1] + 1)
+    nombre = P.bloque("/// Texto corto para mostrar", "usarNube ? modeloNube.toUpperCase()")
+    D.esqueleto(P, [c_cargar, c_guardar, claves, nombre], cps=24)
+    D.hold()
+    D.ficha_explicar(1, "_cofre es un FlutterSecureStorage: guarda los datos cifrados, en Android con Keystore y en iPhone con Keychain. Ideal para la API key.", "static const _cofre")
+    D.ficha_explicar(2, "Estas son las preferencias. usarNube empieza en false: por defecto, YARBYS es cien por ciento local.", "static bool usarNube = false;")
+    D.ficha_explicar(3, "Y esPro es el interruptor de la versión Pro. Aquí conectarías una compra dentro de la app; en este proyecto viene desbloqueada.", "static bool esPro = true;")
+    paso(D, P, 4, c_cargar, "cargar lee el cofre al arrancar la app.", cps=23,
+         despues=[("final datos = await _cofre.readAll();", "hablar = datos['hablar'] != 'no';", "Cargar",
+                   "readAll: lee todo el cofre\n??: valor por defecto si no existe",
+                   "readAll lee todo el cofre, y cada preferencia toma su valor. El doble signo de pregunta pone un valor por defecto si todavía no se guardó nada.")])
+    paso(D, P, 4, c_guardar, "guardar escribe cada valor; lo pego.", modo="pegar")
+    paso(D, P, 5, claves, "Y estas dos funciones leen y guardan la API key, una por proveedor.", cps=23)
+    paso(D, P, 6, nombre, "nombreCerebro es el texto que mostramos debajo del núcleo.", cps=23)
     D.guardar()
-    D.resaltar("class Colores {", "static const suave", titulo="La paleta",
-               frases=["Todos los colores están en un solo lugar, para cambiarlos fácilmente."])
-    D.say("Y ahora, lo más vistoso: el núcleo circular, inspirado en el JARVIS de las películas. Creamos widgets, nucleo.dart.")
-    D.nuevo_archivo("lib/widgets/nucleo.dart")
-    D.pegar(leer("lib/widgets/nucleo.dart"))
+    D.verificar(P.ruta)
+    fin_archivo(D, "Los servicios están listos. Ahora, la parte visual.")
+
+    # ---------------------------------------------------------- TEMA Y NÚCLEO
+    D.capitulo("Paso 10 · tema.dart y el núcleo")
+    P = Plan("lib/tema.dart")
+    D.abrir_desde_explorador(P.ruta)
+    D.ficha("tema.dart", "Los colores y el estilo de la app: fondos oscuros y planos.", [
+        ("clase", "Colores", "La paleta"),
+        ("función", "temaYarbys()", "El tema oscuro de la app"),
+        ("widget", "Pildora", "La etiqueta 'Sin internet'"),
+        ("método", "build()", "Lo que dibuja la píldora"),
+    ])
+    D.say("tema.dart tiene los colores, el tema y un pequeño widget: la píldora que dice Sin internet.", esperar=True)
+    c_tema = P.cuerpo("ThemeData temaYarbys()")
+    c_build = P.cuerpo("Widget build(BuildContext context)")
+    D.esqueleto(P, [c_tema, c_build], modo="pegar")
+    D.hold()
+    D.ficha_explicar(0, "Colores agrupa la paleta: así cambiamos un color en un solo lugar.", "class Colores {")
+    D.ficha_explicar(2, "Pildora es un StatelessWidget: un widget sin estado, que siempre se dibuja igual con los datos que recibe. Recibe un texto, un color y un ícono.", "class Pildora extends StatelessWidget")
+    D.ficha_explicar(3, "Todo widget tiene un método build, que devuelve lo que se dibuja en la pantalla.", "Widget build(BuildContext context)")
+    paso(D, P, 1, c_tema, "temaYarbys devuelve el tema oscuro de Material; lo pego.", modo="pegar",
+         despues=[("brightness: Brightness.dark,", "error: Colores.rojo,", "El tema", None,
+                   "Le decimos que es oscuro y le damos nuestros colores. Todos los botones, campos y barras los usarán.")])
+    paso(D, P, 3, c_build, "Y el build de la píldora.", modo="pegar",
+         despues=[("return Container(", "children: [", "Bloques de Lego",
+                   "Container: la caja con fondo\nRow: pone el ícono y el texto en fila",
+                   "Aquí se ve la idea de los bloques: un Container con fondo redondeado, que adentro tiene una fila, Row, con el ícono y el texto.")])
     D.guardar()
-    D.resaltar("enum EstadoYarbys", None, titulo="Cuatro estados",
-               frases=["YARBYS tiene cuatro estados: en reposo, escuchando, pensando y hablando."])
-    D.resaltar("double _velocidad(EstadoYarbys estado)", "EstadoYarbys.hablando => 1.4,", titulo="Gira según el estado",
-               nota="Un Ticker avisa 60 veces por segundo\nPensando: gira 4 veces más rápido",
-               frases=["Un Ticker nos avisa sesenta veces por segundo, y en cada cuadro los anillos giran un poco. Al pensar, giran cuatro veces más rápido."])
-    D.resaltar("class _PintorNucleo extends CustomPainter", None, titulo="CustomPainter",
-               nota="Dibujamos con código: círculos, arcos y líneas\ncomo en un lienzo",
-               frases=["Y el dibujo lo hacemos con un CustomPainter: un lienzo donde dibujamos con código, con círculos, arcos y líneas."])
+    D.verificar(P.ruta)
+    D.ficha_ocultar()
+
+    P = Plan("lib/widgets/nucleo.dart")
+    D.abrir_desde_explorador(P.ruta)
+    D.ficha("widgets/nucleo.dart", "El núcleo circular de YARBYS, inspirado en el JARVIS de las películas.", [
+        ("enum", "EstadoYarbys", "reposo · escuchando · pensando · hablando"),
+        ("widget", "Nucleo", "StatefulWidget: el que usamos en las pantallas"),
+        ("estado", "_NucleoState", "Lleva la cuenta del tiempo y del giro"),
+        ("método", "initState() · dispose()", "Arranca y apaga el reloj"),
+        ("método", "_velocidad()", "Qué tan rápido gira cada estado"),
+        ("método", "build()", "Dibuja con CustomPaint"),
+        ("clase", "_PintorNucleo", "CustomPainter: el lienzo"),
+        ("método", "paint()", "Dibuja los 8 anillos"),
+    ])
+    D.say("Y ahora lo más vistoso: el núcleo. Aquí aparece un concepto clave de Flutter: el StatefulWidget.", esperar=True)
+    c_init = P.cuerpo("void initState()")
+    m_vel = P.bloque("// Cada estado hace girar", "};")
+    m_vel = (m_vel[0], m_vel[1] + 1)
+    c_disp = P.cuerpo("void dispose()")
+    c_build = P.cuerpo("Widget build(BuildContext context)")
+    ayudas = P.bloque("// Alturas fijas de las barras", "tp.paint(canvas")
+    ayudas = (ayudas[0], ayudas[1] + 2)
+    c_paint = P.cuerpo("void paint(Canvas canvas, Size size)")
+    p2 = P.buscar("    // 2. Anillo de bloques")
+    p5 = P.buscar("    // 5. Dos arcos opuestos")
+    m_repaint = P.bloque("bool shouldRepaint(", "old.segundos != segundos")
+    m_repaint = (m_repaint[0] - 2, m_repaint[1])
+    D.esqueleto(P, [c_init, m_vel, c_disp, c_build, ayudas, c_paint, m_repaint], modo="pegar")
+    D.hold()
+    D.ficha_explicar(0, "Un enum es una lista de opciones fijas: los cuatro estados de YARBYS.", "enum EstadoYarbys")
+    D.ficha_explicar(1, "Un StatefulWidget tiene dos partes. El widget, Nucleo, recibe la configuración: el estado y el tamaño...", "class Nucleo extends StatefulWidget")
+    D.ficha_explicar(2, "...y su State, _NucleoState, guarda los datos que cambian con el tiempo: los segundos y el giro. Cada vez que cambian, llamamos a setState y Flutter vuelve a dibujar.", "class _NucleoState extends State<Nucleo>")
+    D.ficha_explicar(6, "Y _PintorNucleo es un CustomPainter: un lienzo donde dibujamos con código.", "class _PintorNucleo extends CustomPainter")
+    paso(D, P, 3, c_init, "initState se ejecuta una vez, cuando el widget aparece.", modo="pegar",
+         despues=[("_reloj = createTicker((transcurrido) {", "_giro += dt * _velocidad(widget.estado);", "Un reloj de cuadros",
+                   "Ticker: avisa en cada cuadro (60 veces por segundo)\nsetState: actualiza los datos y redibuja",
+                   "Creamos un Ticker, que nos avisa en cada cuadro de la pantalla, sesenta veces por segundo. En cada aviso, setState suma el tiempo y el giro, y Flutter redibuja el núcleo.")])
+    paso(D, P, 4, m_vel, "_velocidad dice qué tan rápido gira cada estado: al pensar, cuatro veces más rápido.", modo="pegar")
+    paso(D, P, 3, c_disp, "dispose apaga el reloj cuando el widget desaparece, para no gastar batería.", cps=22)
+    paso(D, P, 5, c_build, "build entrega el lienzo: CustomPaint con nuestro pintor.", modo="pegar")
+    D.say("Estas son funciones de ayuda para dibujar: un punto en el círculo, un trazo, un arco, girar y escribir texto. Las pego.")
+    D.completar(P, ayudas, modo="pegar")
+    D.hold()
+    paso(D, P, 7, (c_paint[0], p2 - 1), "Y paint dibuja el núcleo, anillo por anillo. Pego la primera parte.", modo="pegar",
+         despues=[("final r = size.width / 2 / 1.14;", "final pulso", "Medidas", None,
+                   "Calculamos el radio según el tamaño, y nos movemos al centro del lienzo."),
+                  ("// 1. Anillo exterior", "_trazo(c, r * 0.006, 0.35)", "Anillo 1", None,
+                   "El primer anillo es un círculo fino con 120 marcas, como un reloj, que gira despacio.")])
+    D.completar(P, (p2, p5 - 1), modo="pegar")
     D.resaltar("// 4. Ecualizador circular", "(0.5 + 0.5 * sin(t * 3.7 + i * 0.31));", titulo="El ecualizador",
-               frases=["Por ejemplo, estas barras forman un ecualizador circular que baila cuando YARBYS escucha o habla."])
+               frases=["Luego vienen los bloques gruesos, los puntos, y este ecualizador: noventa barras que bailan cuando YARBYS escucha o habla."])
+    D.completar(P, (p5, c_paint[1]), modo="pegar")
+    D.resaltar("// 8. Centro: nombre y estado", "EstadoYarbys.hablando => 'HABLANDO',", titulo="El centro",
+               frases=["Y al final, el centro, con el nombre y el estado actual."])
+    paso(D, P, 7, m_repaint, "shouldRepaint le dice a Flutter cuándo volver a pintar: cuando cambia el tiempo o el estado.", cps=22)
+    D.guardar()
+    D.verificar(P.ruta)
+    fin_archivo(D, "El núcleo está listo.")
 
-    D.capitulo("Paso 10 · Las pantallas")
-    D.say("Ahora las pantallas. En lib creamos la carpeta pantallas. Empezamos por inicio.dart, la pantalla que descarga los modelos.")
-    D.nuevo_archivo("lib/pantallas/inicio.dart")
-    D.pegar(leer("lib/pantallas/inicio.dart"))
+    # ---------------------------------------------------------- PANTALLAS
+    D.capitulo("Paso 11 · Las pantallas")
+    P = Plan("lib/pantallas/inicio.dart")
+    D.abrir_desde_explorador(P.ruta)
+    D.ficha("pantallas/inicio.dart", "La primera pantalla: descarga los modelos una sola vez y abre el chat.", [
+        ("widget", "PantallaInicio", "StatefulWidget"),
+        ("estado", "_PantallaInicioState", "Progreso de las descargas y errores"),
+        ("método", "initState()", "Si ya hay modelos, entra directo"),
+        ("método", "_descargar()", "Descarga los dos modelos"),
+        ("método", "_entrar()", "Abre Qdrant y va al chat"),
+        ("método", "build()", "La pantalla"),
+        ("widget", "_Descarga", "La tarjeta con la barra de progreso"),
+    ])
+    D.say("Ahora las pantallas. Empezamos por inicio: la que descarga los modelos la primera vez.", esperar=True)
+    cs = [P.cuerpo("void initState()"), P.cuerpo("Future<void> _descargar()"), P.cuerpo("Future<void> _entrar()"),
+          P.cuerpo("Widget build(BuildContext context)"), P.cuerpo("Widget build(BuildContext context)", P.buscar("class _Descarga"))]
+    D.esqueleto(P, cs, modo="pegar")
+    D.hold()
+    D.ficha_explicar(1, "Su estado guarda el progreso de cada descarga, si está descargando, y el error, si lo hay.", "int _progresoEmbeddings = 0;")
+    paso(D, P, 2, cs[0], "initState: si los modelos ya están en el celular, entramos directo.", cps=22)
+    paso(D, P, 3, cs[1], "_descargar baja los dos modelos.", modo="pegar",
+         despues=[("await Modelos.descargarEmbeddings(", "await _entrar();", "Descargar con progreso",
+                   "setState: cambia los datos y redibuja la pantalla",
+                   "Usa los métodos de Modelos. Cada vez que llega un porcentaje nuevo, setState lo guarda y Flutter redibuja la barra de progreso. Si algo falla, catch muestra el error.")])
+    paso(D, P, 4, cs[2], "_entrar abre Qdrant y cambia a la pantalla del chat.", modo="pegar",
+         despues=[("Navigator.of(", "pushReplacement(MaterialPageRoute(builder: (_) => const PantallaChat()));", "Navegar",
+                   "Navigator: cambia de pantalla\npushReplacement: no se puede volver atrás",
+                   "Navigator cambia de pantalla. Con pushReplacement, la pantalla de inicio se reemplaza y no se puede volver a ella.")])
+    paso(D, P, 5, cs[3], "Y build arma la pantalla.", modo="pegar",
+         despues=[("return Scaffold(", "child: ListView(", "La estructura",
+                   "Scaffold: la página\nSafeArea: evita la cámara y los bordes\nListView: una lista que se desplaza",
+                   "Scaffold es la página, SafeArea evita la cámara y los bordes del celular, y ListView pone todo en una lista que se puede desplazar: el núcleo, los textos, las dos tarjetas y el botón."),
+                  ("onPressed: _descargando ? null : _descargar,", None, None, None,
+                   "El botón llama a _descargar, y se desactiva mientras descarga.")])
+    paso(D, P, 6, cs[4], "_Descarga es la tarjeta de cada modelo; la pego.", modo="pegar")
     D.guardar()
-    D.resaltar("if (Modelos.listos) _entrar();", None, titulo="Solo la primera vez",
-               frases=["Si los modelos ya están descargados, vamos directo al chat."])
-    D.resaltar("await Modelos.descargarEmbeddings(", "await _entrar();", titulo="Descargar con progreso",
-               nota="setState: actualiza la pantalla con el nuevo %",
-               frases=["Si no, el botón descarga los dos modelos. Cada vez que llega un porcentaje nuevo, setState redibuja la pantalla con la barra de progreso."])
-    D.say("La pantalla principal es chat.dart. La pego, y vamos a ver su corazón paso a paso.")
-    D.nuevo_archivo("lib/pantallas/chat.dart")
-    D.pegar(leer("lib/pantallas/chat.dart"))
-    D.guardar()
-    D.resaltar("// 1. Memoria:", "await Memoria.guardar(hilo, pregunta);", titulo="1 · Memoria",
-               nota="Crea el hilo si es nuevo\nLee los últimos 6 mensajes\nGuarda tu pregunta",
-               frases=["La función enviar hace todo el trabajo. Paso uno, la memoria: si la conversación es nueva, creamos el hilo. Leemos los últimos seis mensajes y guardamos tu pregunta."])
-    D.resaltar("// 2. RAG:", "fuentes = {", titulo="2 · RAG",
-               frases=["Paso dos, RAG: buscamos en Qdrant los fragmentos más parecidos a la pregunta, y anotamos de qué documentos salieron."])
-    D.resaltar("// 3. El LLM responde", "respuesta.write(token);", titulo="3 · El LLM",
-               nota="armarPrompt: documentos + historial + pregunta\nawait for: recibe cada token y actualiza la burbuja",
-               frases=["Paso tres: armamos el prompt, y con await for recibimos cada token y actualizamos la burbuja en la pantalla. Por eso la respuesta aparece poco a poco."])
-    D.resaltar("// 4. Guardamos la respuesta", "await Memoria.guardar(hilo, respuestaFinal);", titulo="4 · Guardar",
-               frases=["Paso cuatro: guardamos la respuesta en la memoria."])
-    D.resaltar("// 5. Y la decimos en voz alta", "await Voz.hablar(respuestaFinal.texto);", titulo="5 · Hablar",
-               frases=["Y paso cinco: YARBYS la lee en voz alta, y el núcleo cambia al estado hablando."])
-    D.resaltar("Future<void> _microfono() async {", "_enviar(texto);", titulo="El micrófono",
-               frases=["Con el micrófono es igual: cuando terminas de hablar, el texto reconocido se envía con la misma función."])
-    D.say("Siguen documentos.dart, para agregar tus archivos, y ajustes.dart. Los pego.")
-    D.nuevo_archivo("lib/pantallas/documentos.dart")
-    D.pegar(leer("lib/pantallas/documentos.dart"))
-    D.guardar()
-    D.resaltar("final archivos = await FilePicker.pickFiles(", "await _aprender(archivo.name, texto);", titulo="Agregar archivos",
-               nota="Elige archivos .txt o .md\nlos lee y los manda a Conocimiento.aprender",
-               frases=["Aquí elegimos archivos de texto del celular, los leemos y se los damos a Conocimiento para que los aprenda. También puedes escribir una nota rápida."])
-    D.nuevo_archivo("lib/pantallas/ajustes.dart")
-    D.pegar(leer("lib/pantallas/ajustes.dart"))
-    D.guardar()
-    D.resaltar("if (nube && !Ajustes.esPro) {", "return;", titulo="Solo con Pro",
-               frases=["Y en ajustes, si alguien que no es Pro intenta activar el LLM externo, le mostramos la versión Pro."])
-    D.resaltar("'Con un LLM externo, tu pregunta", "'siguen guardados en el celular.',", titulo="Transparencia",
-               frases=["Además le explicamos al usuario qué datos salen del celular cuando usa un LLM externo. Es importante ser transparentes."])
+    D.verificar(P.ruta)
+    D.ficha_ocultar()
 
-    D.capitulo("Paso 11 · main.dart")
-    D.say("Por último, main.dart: el punto de entrada de la app. Lo abrimos: trae el ejemplo del contador de Flutter. Lo borramos todo.")
-    D.abrir_desde_explorador("lib/main.dart")
+    P = Plan("lib/pantallas/chat.dart")
+    D.abrir_desde_explorador(P.ruta)
+    D.ficha("pantallas/chat.dart", "La pantalla principal: el núcleo, los mensajes y el campo para hablar con YARBYS.", [
+        ("widget", "PantallaChat", "StatefulWidget"),
+        ("estado", "_PantallaChatState", "Mensajes, hilo actual y estado del núcleo"),
+        ("método", "initState()", "Carga los hilos"),
+        ("método", "_cargarHilos() · _abrirHilo()", "Conversaciones"),
+        ("método", "_enviar()", "El corazón: buscar → pensar → responder → hablar"),
+        ("método", "_microfono()", "Hablar en vez de escribir"),
+        ("método", "_limpiar() · _avisar() · _bajar() · _ir()", "Ayudas"),
+        ("método", "build() · _menuHilos()", "La pantalla y el menú"),
+        ("widget", "_Burbuja", "Una burbuja del chat"),
+    ])
+    D.say("La pantalla del chat es la principal. Su método más importante es enviar: el corazón de toda la app.", esperar=True)
+    c = {n: P.cuerpo(f) for n, f in [("init", "void initState()"), ("cargar", "Future<void> _cargarHilos()"),
+                                      ("abrir", "Future<void> _abrirHilo("), ("enviar", "Future<void> _enviar("),
+                                      ("micro", "Future<void> _microfono()"), ("avisar", "void _avisar("),
+                                      ("bajar", "void _bajar()"), ("ir", "Future<void> _ir("),
+                                      ("build", "Widget build(BuildContext context)"), ("menu", "Widget _menuHilos()")]}
+    c["burbuja"] = P.cuerpo("Widget build(BuildContext context)", P.buscar("class _Burbuja"))
+    limpiar = P.bloque("// Quita asteriscos", "texto.replaceAll(RegExp")
+    limpiar = (limpiar[0], limpiar[1] + 1)
+    D.esqueleto(P, list(c.values()) + [limpiar], modo="pegar")
+    D.hold()
+    D.ficha_explicar(1, "Su estado guarda el controlador del campo de texto, la lista de mensajes en pantalla, los hilos, el hilo actual y el estado del núcleo.", "final _campo = TextEditingController();")
+    D.ficha_explicar(4, "Y aquí está enviar, todavía vacío. Lo escribiremos paso a paso.", "Future<void> _enviar(")
+    paso(D, P, 2, c["init"], "initState carga los hilos y le da a la voz el aviso para cuando se apague el micrófono.", modo="pegar")
+    paso(D, P, 3, c["cargar"], "_cargarHilos lee las conversaciones de la memoria...", modo="pegar")
+    paso(D, P, 3, c["abrir"], "...y _abrirHilo muestra los mensajes de una conversación.", modo="pegar")
+    i1 = P.buscar("    // 2. RAG:", c["enviar"][0]) - 4
+    i2 = P.buscar("    // 4. Guardamos la respuesta", c["enviar"][0])
+    i3 = P.buscar("    // 5. Y la decimos en voz alta", c["enviar"][0])
+    paso(D, P, 4, (c["enviar"][0], P.buscar("    _bajar();", c["enviar"][0])), "Ahora sí, enviar. Paso uno, la memoria.", cps=24,
+         despues=[("// 1. Memoria:", "await Memoria.guardar(hilo, pregunta);", "1 · Memoria",
+                   "Crea el hilo si es nuevo\nLee los últimos 6 mensajes\nGuarda tu pregunta",
+                   "Si la conversación es nueva, creamos el hilo. Leemos los últimos seis mensajes y guardamos tu pregunta. Luego, setState la muestra en pantalla y pone el núcleo en pensando.")])
+    paso(D, P, 4, (P.buscar("    _bajar();", c["enviar"][0]) + 1, i2 - 2), "Pasos dos y tres: buscar y responder.", cps=24,
+         despues=[("// 2. RAG:", "fuentes = {", "2 · RAG", None,
+                   "Buscamos en Qdrant los fragmentos más parecidos a la pregunta, y anotamos de qué documentos salieron."),
+                  ("// 3. El LLM responde", "respuesta.write(token);", "3 · El LLM",
+                   "armarPrompt: documentos + historial + pregunta\nawait for: recibe cada token y actualiza la burbuja",
+                   "Armamos el prompt, y con await for recibimos cada token y actualizamos la burbuja. Por eso la respuesta aparece poco a poco.")])
+    paso(D, P, 4, (i2 - 1, c["enviar"][1]), "Y los pasos cuatro y cinco: guardar y hablar.", cps=24,
+         despues=[("// 4. Guardamos la respuesta", "await Memoria.guardar(hilo, respuestaFinal);", "4 · Guardar", None,
+                   "Guardamos la respuesta en la memoria..."),
+                  ("// 5. Y la decimos en voz alta", "await Voz.hablar(respuestaFinal.texto);", "5 · Hablar", None,
+                   "...y YARBYS la lee en voz alta, con el núcleo en el estado hablando.")])
+    paso(D, P, 5, c["micro"], "_microfono hace lo mismo, pero con tu voz: cuando terminas de hablar, envía el texto reconocido.", modo="pegar")
+    D.say("Estas son funciones de ayuda: limpiar el markdown, mostrar avisos, bajar la lista y cambiar de pantalla. Las pego.")
+    D.ficha_ver(6)
+    D.completar(P, limpiar, modo="pegar")
+    for k in ("avisar", "bajar", "ir"):
+        D.completar(P, c[k], modo="pegar")
+    D.ficha_hecho(6)
+    D.hold()
+    paso(D, P, 7, c["build"], "Y build, la pantalla. La pego y vemos sus bloques.", modo="pegar",
+         despues=[("appBar: AppBar(", "drawer: _menuHilos(),", "La barra de arriba", None,
+                   "Arriba, una AppBar con el nombre, la píldora y los botones de documentos y ajustes. Y drawer es el menú lateral de conversaciones."),
+                  ("AnimatedContainer(", "child: FittedBox(child: Nucleo(", "El núcleo", None,
+                   "Luego el núcleo, que se achica con una animación cuando ya hay mensajes."),
+                  ("? ListView.builder(", "itemBuilder: (_, i) => _Burbuja(_mensajes[i]),", "Los mensajes", None,
+                   "La lista de mensajes, una burbuja por mensaje..."),
+                  ("child: TextField(", "onSubmitted: _enviar,", "El campo", None,
+                   "...y abajo el campo de texto, que al enviar llama a nuestra función enviar.")])
+    paso(D, P, 7, c["menu"], "_menuHilos es el menú de conversaciones; lo pego.", modo="pegar")
+    paso(D, P, 8, c["burbuja"], "Y _Burbuja dibuja cada mensaje: azul a la derecha si es tuyo, gris a la izquierda si es de YARBYS, con sus fuentes debajo.", modo="pegar")
+    D.guardar()
+    D.verificar(P.ruta)
+    D.ficha_ocultar()
+
+    P = Plan("lib/pantallas/documentos.dart")
+    D.abrir_desde_explorador(P.ruta)
+    D.ficha("pantallas/documentos.dart", "Tus documentos: agregar archivos o notas, y borrarlos.", [
+        ("widget", "PantallaDocumentos", "StatefulWidget"),
+        ("estado", "_PantallaDocumentosState", "La lista y el documento que se está aprendiendo"),
+        ("método", "_cargar() · _aprender()", "Leer la lista y aprender un documento"),
+        ("método", "_elegirArchivos()", "Elegir archivos .txt o .md"),
+        ("método", "_escribirNota()", "Escribir una nota rápida"),
+        ("método", "_olvidar() · build()", "Borrar y la pantalla"),
+    ])
+    D.say("La pantalla de documentos es parecida, así que la armamos más rápido.", esperar=True)
+    c = [P.cuerpo("void initState()"), P.cuerpo("Future<void> _cargar()"), P.cuerpo("Future<void> _aprender("),
+         P.cuerpo("Future<void> _elegirArchivos()"), P.cuerpo("Future<void> _escribirNota()"),
+         P.cuerpo("Future<void> _olvidar("), P.cuerpo("void _avisar("), P.cuerpo("Widget build(BuildContext context)")]
+    D.esqueleto(P, c, modo="pegar")
+    D.hold()
+    D.ficha_ver(2)
+    D.completar(P, c[0], modo="pegar")
+    D.completar(P, c[1], modo="pegar")
+    paso(D, P, 2, c[2], "_aprender le pasa el texto a Conocimiento y muestra un aviso con cuántos fragmentos guardó.", modo="pegar")
+    paso(D, P, 3, c[3], "_elegirArchivos usa file_picker.", modo="pegar",
+         despues=[("final archivos = await FilePicker.pickFiles(", "await _aprender(archivo.name, texto);", "Agregar archivos",
+                   "pickFiles: abre el selector de archivos\nutf8.decode: convierte los bytes en texto",
+                   "pickFiles abre el selector de archivos del celular, solo para .txt y .md. Leemos cada archivo, lo convertimos en texto y se lo damos a _aprender.")])
+    paso(D, P, 4, c[4], "_escribirNota abre un diálogo para escribir o pegar una nota.", modo="pegar")
+    paso(D, P, 5, c[5], "Y el resto: borrar, avisar y la pantalla.", modo="pegar")
+    D.completar(P, c[6], modo="pegar")
+    D.completar(P, c[7], modo="pegar")
+    D.ficha_hecho(5)
+    D.guardar()
+    D.verificar(P.ruta)
+    D.ficha_ocultar()
+
+    P = Plan("lib/pantallas/ajustes.dart")
+    D.abrir_desde_explorador(P.ruta)
+    D.ficha("pantallas/ajustes.dart", "Elegir el cerebro, la voz y borrar la memoria.", [
+        ("widget", "PantallaAjustes", "StatefulWidget"),
+        ("método", "initState() · _guardar() · dispose()", "Leer y guardar al salir"),
+        ("método", "_cambiarModo()", "Local o LLM externo (Pro)"),
+        ("método", "_cambiarProveedor()", "OpenAI o Anthropic"),
+        ("método", "build()", "La pantalla"),
+    ])
+    D.say("Y la última pantalla, ajustes.", esperar=True)
+    c = [P.cuerpo("void initState()"), P.cuerpo("Future<void> _leerClave()"), P.cuerpo("Future<void> _guardar()"),
+         P.cuerpo("void dispose()"), P.cuerpo("void _cambiarModo("), P.cuerpo("Future<void> _cambiarProveedor("),
+         P.cuerpo("Widget build(BuildContext context)"), P.cuerpo("Widget build(BuildContext context)", P.buscar("class _Titulo"))]
+    D.esqueleto(P, c, modo="pegar")
+    D.hold()
+    D.ficha_ver(1)
+    for r in c[:4]:
+        D.completar(P, r, modo="pegar")
+    D.ficha_hecho(1)
+    paso(D, P, 2, c[4], "_cambiarModo activa el LLM externo.", modo="pegar",
+         despues=[("if (nube && !Ajustes.esPro) {", "return;", "Solo con Pro", None,
+                   "Si alguien que no es Pro intenta activarlo, le mostramos la versión Pro.")])
+    paso(D, P, 3, c[5], "_cambiarProveedor cambia entre OpenAI y Anthropic.", modo="pegar")
+    paso(D, P, 4, c[6], "Y build arma la pantalla.", modo="pegar",
+         despues=[("SegmentedButton<bool>(", "onSelectionChanged: (s) => _cambiarModo(s.first),", "Elegir el cerebro", None,
+                   "Con SegmentedButton se elige el cerebro: en el celular o externo."),
+                  ("'Con un LLM externo, tu pregunta", "'siguen guardados en el celular.',", "Transparencia", None,
+                   "Y le explicamos al usuario qué datos salen del celular cuando usa un LLM externo. Es importante ser transparentes.")])
+    D.completar(P, c[7], modo="pegar")
+    D.guardar()
+    D.verificar(P.ruta)
+    fin_archivo(D, "Las cuatro pantallas están listas.")
+
+    # ---------------------------------------------------------- MAIN
+    D.capitulo("Paso 12 · main.dart")
+    P = Plan("lib/main.dart")
+    D.say("Por último, main.dart: el punto de partida. Lo abrimos: trae el ejemplo del contador de Flutter. Lo borramos todo.")
+    D.abrir_desde_explorador(P.ruta)
     D.wait(1.0)
     D.borrar_todo()
     D.hold()
-    b = piezas("lib/main.dart", ["Future<void> main() async {", "class YarbysApp"])
-    D.escribir(b[0] + b[1], cps=20)
-    D.resaltar("await FlutterEdgeAi.initialize(", "embeddingBackends:", titulo="Encender el motor de IA",
-               nota="LiteRtLmEngine: ejecuta Gemma 4\nLiteRtEmbeddingBackend: ejecuta EmbeddingGemma",
-               frases=["Al arrancar, encendemos el motor de inteligencia artificial: LiteRtLmEngine para Gemma, y LiteRtEmbeddingBackend para EmbeddingGemma."])
-    D.resaltar("await Memoria.abrir();", "await Ajustes.cargar();", frases=["Abrimos la memoria y cargamos los ajustes."])
-    D.escribir(b[2], cps=21)
+    D.ficha("main.dart", "El punto de partida: prepara el motor de IA, la memoria y abre la app.", [
+        ("función", "main()", "Lo primero que se ejecuta"),
+        ("widget", "YarbysApp", "La app: tema y primera pantalla"),
+        ("método", "build()", ""),
+    ])
+    c_main = P.cuerpo("Future<void> main() async")
+    c_build = P.cuerpo("Widget build(BuildContext context)")
+    D.esqueleto(P, [c_main, c_build], cps=22)
+    D.hold()
+    D.ficha_explicar(0, "main es lo primero que se ejecuta al abrir la app.", "Future<void> main() async")
+    D.ficha_explicar(1, "Y YarbysApp es el widget raíz de toda la app.", "class YarbysApp extends StatelessWidget")
+    paso(D, P, 0, c_main, "Implementamos main.", cps=22,
+         despues=[("await FlutterEdgeAi.initialize(", "embeddingBackends:", "Encender el motor de IA",
+                   "LiteRtLmEngine: ejecuta Gemma 4\nLiteRtEmbeddingBackend: ejecuta EmbeddingGemma",
+                   "Encendemos el motor de inteligencia artificial: LiteRtLmEngine para Gemma, y LiteRtEmbeddingBackend para EmbeddingGemma."),
+                  ("await Memoria.abrir();", "runApp(const YarbysApp());", None, None,
+                   "Abrimos la memoria, cargamos los ajustes, y runApp arranca la app.")])
+    paso(D, P, 2, c_build, "Y build devuelve la app.", cps=22,
+         despues=[("return MaterialApp(", "home: const PantallaInicio(),", "La app", None,
+                   "MaterialApp con nuestro tema oscuro, y la pantalla de inicio como primera pantalla.")])
     D.guardar()
-    D.verificar("lib/main.dart")
-    D.resaltar("return MaterialApp(", "home: const PantallaInicio(),", titulo="La app",
-               frases=["Y la app: MaterialApp con nuestro tema oscuro, y la pantalla de inicio como primera pantalla."])
+    D.verificar(P.ruta)
+    fin_archivo(D, "Y main.dart está listo.")
     D.set(abiertas=frozenset({"lib", "lib/pantallas", "lib/servicios", "lib/widgets"}))
-    D.say("Y listo. Así queda el proyecto: los servicios con la inteligencia artificial, el núcleo y las pantallas.", esperar=True)
+    D.say("Así queda el proyecto completo: los servicios con la inteligencia artificial, el núcleo y las pantallas.", esperar=True)
 
-    # ---------------------------------------------------------- PASO 12: EJECUTAR
-    D.capitulo("Paso 12 · Probar en el celular")
+    # ---------------------------------------------------------- PASO 13: EJECUTAR
+    D.capitulo("Paso 13 · Probar en el celular")
     D.set(term_abierto=False, term_lineas=())
     D.abrir_terminal()
     D.say("Conectamos el celular por USB y revisamos que Flutter lo vea con flutter devices.")
@@ -2393,12 +3275,82 @@ PRONUNCIACION = sorted([
     ("2.6", "dos punto seis"),
     ("2.8", "dos punto ocho"),
     ("like", "láik"),
+    # código de Flutter y Dart
+    ("flutter_edge_ai_litertlm", "flóter ech ei ai, lait er te ele eme"),
+    ("flutter_edge_ai_qdrant", "flóter ech ei ai cudrant"),
+    ("flutter_edge_ai_rag", "flóter ech ei ai rag"),
+    ("Future<void>", "fiúcher void"),
+    ("Future", "fiúcher"),
+    ("async", "eisínc"),
+    ("await", "auéit"),
+    ("static", "estátic"),
+    ("late", "léit"),
+    ("enum", "ínum"),
+    ("main", "méin"),
+    ("build", "bild"),
+    ("dispose", "dispóus"),
+    ("catch", "cach"),
+    ("finally", "fáinali"),
+    ("initialize", "inishaláis"),
+    ("insert", "insért"),
+    ("install", "instól"),
+    ("limit", "límit"),
+    ("query", "cuíri"),
+    ("reversed", "rivérsd"),
+    ("speak", "spik"),
+    ("paint", "péint"),
+    ("drawer", "dróer"),
+    ("markdown", "márkdaun"),
+    ("resolve", "risólv"),
+    ("commit", "cómit"),
+    ("State", "stéit"),
+    ("Row", "rou"),
+    ("Scaffold", "scáfold"),
+    ("Container", "contéiner"),
+    ("Navigator", "návigueitor"),
+    ("Installing", "instóling"),
+    ("Pildora", "píldora"),
+    ("Nucleo", "núcleo"),
+    (".txt", " punto te equis te"),
+    (".md", " punto eme de"),
+    # la página de Hugging Face
+    ("huggingface.co", "jáguin feis punto co"),
+    ("litert-community", "lait er te comiúniti"),
+    ("Files and versions", "fails and vérshons"),
+    ("gemma-4-E2B-it-litert-lm", "yéma cuatro, e dos be, it, lait er te ele eme"),
+    ("gemma-4-E2B-it.litertlm", "yéma cuatro, e dos be, it, punto lait er te ele eme"),
+    ("embeddinggemma-2-text-270m-litert-lm", "embéding yéma dos, text, doscientos setenta eme, lait er te ele eme"),
 ], key=lambda par: -len(par[0]))
+_CLAVES = {k.lower() for k, _ in PRONUNCIACION}
+
+# Partes en inglés de los nombres del código (hasActiveModel → "jas áctiv módel")
+INGLES = {"has": "jas", "active": "áctiv", "model": "módel", "embedder": "embéder", "from": "from",
+          "network": "nétuork", "init": "init", "state": "stéit", "stateful": "stéitful", "stateless": "stéitles",
+          "list": "list", "view": "viu", "safe": "séif", "area": "érea", "app": "ap", "bar": "bar",
+          "custom": "cástom", "paint": "péint", "segmented": "ségmented", "button": "báton", "string": "string",
+          "buffer": "báfer", "should": "shud", "repaint": "ripéint", "pick": "pik", "files": "fails",
+          "push": "push", "replacement": "ripléisment", "read": "rid", "all": "ol", "run": "ran", "db": "de be",
+          "url": "u erre ele", "nucleo": "núcleo", "oir": "oír", "microfono": "micrófono", "indice": "índice",
+          "oido": "oído", "menu": "menú"}
+
+
+def _decir_identificador(m):
+    """Separa los nombres del código en palabras: _cargarHilos → "cargar Hilos"."""
+    w = m.group()
+    if w.lower() in _CLAVES:
+        return w
+    trozos = []
+    for t in w.split("."):
+        if t.startswith("_") or re.search(r"[a-z][A-Z]", t):
+            partes = re.findall(r"[A-Z]?[a-záéíóúñ]+|[A-Z]+(?![a-z])|\d+", t)
+            t = " ".join(INGLES.get(p.lower(), p) for p in partes)
+        trozos.append(t)
+    return ".".join(trozos)
 
 
 def texto_hablado(texto):
     """Convierte el texto del guion en el texto que pronuncia la voz."""
-    t = texto
+    t = re.sub(r"(?<![\w-])_*[A-Za-z][\w-]*(?:\.[A-Za-z_][\w-]*)*", _decir_identificador, texto)
     for original, dicho in PRONUNCIACION:
         patron = re.escape(original)
         if original[0].isalnum() or original[0] == "_":
@@ -2407,6 +3359,7 @@ def texto_hablado(texto):
             patron += r"(?![\w])"
         flags = 0 if original in ("IA", "API", "RAG", "LLM", "LLMs", "SQL", "PATH", "APK", "USB", "add") else re.IGNORECASE
         t = re.sub(patron, dicho, t, flags=flags)
+    t = re.sub(r"(?<=[A-Za-z])\.(?=[a-z_])", " punto ", t)          # Modelos.descargarGemma
     t = re.sub(r"\b[A-ZÁÉÍÓÚÑ]{2,}\b", lambda m: m.group().lower(), t)   # énfasis en MAYÚSCULAS
     return t.replace("'", "").replace("\"", "")
 
