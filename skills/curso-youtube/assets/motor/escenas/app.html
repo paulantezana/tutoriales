@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <!-- Réplica de la app del curso (celular o navegador), manejada por eventos en tiempo virtual.
+       Las pantallas de cada curso están en app_pantallas.js. -->
+  <link rel="stylesheet" href="estilos.css">
+  <style>
+    .forma { position: absolute; }
+    #circulo { width: 900px; height: 900px; border-radius: 50%; background: var(--forma); left: 120px; top: 90px; }
+    .i { display: inline-grid; place-items: center; flex: none; }
+    .i svg { width: 100%; height: 100%; }
+    /* celular */
+    #tel { position: absolute; left: 330px; top: 40px; width: 500px; height: 1000px; border-radius: 70px; background: #15181b; padding: 16px; }
+    #tel #pantalla { width: 468px; height: 968px; border-radius: 56px; }
+    #isla { position: absolute; left: 50%; top: 12px; width: 120px; height: 32px; border-radius: 16px; background: #000; transform: translateX(-50%); z-index: 50; }
+    #estado { position: absolute; left: 0; right: 0; top: 0; height: 52px; display: flex; justify-content: space-between; align-items: center; padding: 6px 36px 0; font: 600 18px Roboto; z-index: 40; }
+    #estado .der { display: flex; gap: 8px; align-items: center; }
+    /* navegador */
+    #nav { position: absolute; left: 60px; top: 80px; width: 1060px; height: 900px; border-radius: 14px; overflow: hidden; background: #202124; box-shadow: 0 20px 60px rgba(0,0,0,.4); }
+    #nav .barra { height: 64px; display: flex; align-items: center; gap: 14px; padding: 0 18px; background: #35363a; color: #e8eaed; font: 400 18px Roboto; }
+    #nav .url { flex: 1; height: 40px; border-radius: 20px; background: #202124; display: flex; align-items: center; padding: 0 18px; color: #e8eaed; }
+    #nav #pantalla { width: 1060px; height: 836px; }
+    #pantalla { position: relative; overflow: hidden; font-family: Roboto, "Open Sans", sans-serif; }
+    #app { position: absolute; inset: 0; }
+    .capa { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; }
+    #debug { position: absolute; right: -54px; top: 30px; width: 200px; height: 26px; transform: rotate(45deg); background: rgba(183, 28, 28, .63); color: #fff; font: 700 15px Roboto; letter-spacing: 1px; display: grid; place-items: center; z-index: 45; }
+    #toque { position: absolute; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: rgba(120, 120, 120, .30); border: 3px solid rgba(255, 255, 255, .8); z-index: 60; pointer-events: none; }
+    /* panel de la derecha */
+    #der { position: absolute; left: 930px; top: 110px; width: 860px; }
+    body.navegador #der { left: 1180px; width: 640px; }
+    #der h1 { font: 800 64px/1.1 "Open Sans"; margin: 22px 0 0; letter-spacing: -0.01em; }
+    body.navegador #der h1 { font-size: 52px; }
+    #der h1 .acento { color: var(--secundario); }
+    #notas { margin-top: 40px; display: grid; gap: 18px; }
+    .nota { display: flex; align-items: center; gap: 20px; padding: 22px 26px; border-radius: 22px; background: var(--superficie); border: 2px solid var(--borde); font: 400 27px/1.35 Lato; }
+    .nota .cuadro { width: 64px; height: 64px; border-radius: 16px; display: grid; place-items: center; flex: none; }
+  </style>
+</head>
+<body class="oscuro">
+  <div id="escena">
+    <div class="forma" id="circulo"></div>
+    <div class="forma" style="width:46px;height:46px;border-radius:50%;background:var(--enfasis);left:250px;top:170px"></div>
+    <div class="forma" style="width:74px;height:74px;border-radius:50%;border:11px solid var(--secundario);left:200px;top:820px"></div>
+    <div id="marco"></div>
+    <div id="der"><span class="kicker" id="kicker"></span><h1 id="titulo"></h1><div id="notas"></div></div>
+  </div>
+  <script src="lib/iconos.js"></script>
+  <script src="app_pantallas.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

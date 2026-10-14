@@ -1,0 +1,227 @@
+1
+00:00:00,000 --> 00:00:09,800
+Hola, ¿qué tal? Bienvenidos a este curso. Vamos a crear YARBYS: nuestro propio asistente de inteligencia artificial, que vive cien por ciento dentro del celular.
+
+2
+00:00:09,800 --> 00:00:18,133
+En este primer video vas a ver el resultado final, vas a entender cómo funciona por dentro, y vamos a preparar el proyecto en Flutter.
+
+3
+00:00:18,133 --> 00:00:24,711
+Y al terminar este video ya vas a tener la app corriendo en tu celular. Así que, vamos.
+
+4
+00:00:25,467 --> 00:00:32,300
+Este es YARBYS en mi celular, así queda al final del curso. Y fíjate en algo: está en modo avión. No hay internet.
+
+5
+00:00:32,300 --> 00:00:36,019
+Le pregunto qué tengo el miércoles.
+
+6
+00:00:47,033 --> 00:00:55,979
+Respondió con mi agenda, que le enseñé antes, y me dice de qué documento sacó la información. Ahora le hablo con el micrófono.
+
+7
+00:01:09,767 --> 00:01:19,367
+Me entendió por voz y me respondió hablando. Y todo esto ocurre dentro del teléfono: el modelo de inteligencia artificial, la base de datos y la memoria.
+
+8
+00:01:19,367 --> 00:01:27,933
+El curso tiene nueve videos, y vamos a avanzar poco a poco. En cada video agregamos una pieza, y siempre terminamos con algo funcionando.
+
+9
+00:01:27,933 --> 00:01:37,833
+Primero haremos que Gemma responda en la consola, sin ninguna pantalla. Luego le hacemos un chat sencillo, le damos memoria, y le enseñamos a leer tus documentos.
+
+10
+00:01:37,833 --> 00:01:47,505
+Después le agregamos la voz, la dejamos bonita con su núcleo animado, y al final generamos el APK para instalarlo en cualquier celular.
+
+11
+00:01:47,767 --> 00:01:59,967
+Antes de programar, un poco de teoría. Cuando usas ChatGPT, tu pregunta viaja por internet hasta un centro de datos lleno de computadoras gigantes. Allí se genera la respuesta, y vuelve a tu teléfono.
+
+12
+00:01:59,967 --> 00:02:11,100
+En YARBYS es distinto. El modelo de inteligencia artificial es un archivo que descargamos una sola vez, y que vive dentro del celular. El procesador del teléfono hace todo el trabajo.
+
+13
+00:02:11,100 --> 00:02:20,300
+Eso tiene grandes ventajas: tus datos nunca salen del teléfono, funciona sin internet, no pagas por cada pregunta y no esperas a ningún servidor.
+
+14
+00:02:20,300 --> 00:02:31,721
+¿Las desventajas? El modelo es más pequeño que los de la nube, ocupa espacio, y usa la memoria RAM y la batería. Por eso elegiremos un modelo pensado para celulares.
+
+15
+00:02:31,967 --> 00:02:37,367
+Para construir a YARBYS necesitamos cinco piezas, y todas viven dentro del celular.
+
+16
+00:02:37,367 --> 00:02:43,567
+Un cerebro, que es el modelo de lenguaje: Gemma 4. Y un traductor de textos a números: EmbeddingGemma.
+
+17
+00:02:43,567 --> 00:02:51,133
+Un buscador de información, que es la base de datos vectorial Qdrant Edge. Y una memoria para las conversaciones: SQLite.
+
+18
+00:02:51,133 --> 00:03:01,338
+Y la voz, para escuchar y hablar. Flutter será el cuerpo: la app que une todas las piezas. Cada pieza la vamos a explicar en detalle en su propio video.
+
+19
+00:03:01,567 --> 00:03:09,533
+Ahora, ¿cómo vamos a ordenar el código? En tres capas. Arriba, las pantallas: lo que ve el usuario. Inicio, el chat y tus documentos.
+
+20
+00:03:09,533 --> 00:03:16,533
+En el medio, la clase Yarbys: el asistente. Recibe tu pregunta y coordina a todos los demás para responderla.
+
+21
+00:03:16,533 --> 00:03:29,767
+Y abajo, los servicios. Cada uno hace una sola cosa: modelos descarga la inteligencia artificial, cerebro habla con Gemma, memoria guarda las conversaciones, conocimiento busca en tus documentos, y voz escucha y habla.
+
+22
+00:03:29,767 --> 00:03:44,345
+Y hay una regla importante: las pantallas solo hablan con Yarbys, nunca directamente con Gemma o con la base de datos. Gracias a eso, cada pieza la podemos probar primero en la consola, y después conectarla a la pantalla.
+
+23
+00:03:44,600 --> 00:03:53,400
+Y el cuerpo de YARBYS es Flutter, el framework de Google para crear apps. Con un solo código, en lenguaje Dart, tienes tu app para Android y para iPhone.
+
+24
+00:03:53,400 --> 00:04:01,067
+En Flutter todo es un widget: un texto, un botón, una lista. Y los combinamos como bloques de Lego para armar cada pantalla.
+
+25
+00:04:01,067 --> 00:04:12,189
+Las piezas de inteligencia artificial las agregamos con paquetes de pub.dev, la tienda de librerías de Flutter. Las iremos instalando a medida que las necesitemos.
+
+26
+00:04:12,467 --> 00:04:23,400
+Pasemos a la instalación en Windows. Primero, Flutter: lo descargas desde flutter.dev, lo descomprimes, por ejemplo, en C:\flutter, y agregas la carpeta bin al PATH.
+
+27
+00:04:23,400 --> 00:04:30,067
+Segundo, Android Studio. Trae el Android SDK, que es lo que necesitamos para compilar apps de Android.
+
+28
+00:04:30,067 --> 00:04:37,667
+Tercero, Visual Studio Code con la extensión de Flutter. Y cuarto, tu celular Android con la depuración USB activada.
+
+29
+00:04:37,667 --> 00:04:51,157
+Para activarla: en Ajustes, Acerca del teléfono, toca siete veces Número de compilación. Luego, en Opciones de desarrollador, activa Depuración USB, y conecta el celular a la computadora con el cable.
+
+30
+00:04:51,400 --> 00:05:02,067
+Con todo instalado, abrimos Visual Studio Code. Yo abrí la carpeta C:\proyectos con File, Open Folder. Y abrimos la terminal con Control + comilla invertida.
+
+31
+00:05:02,067 --> 00:05:07,000
+Primero revisamos que todo esté bien instalado con flutter doctor.
+
+32
+00:05:07,000 --> 00:05:14,733
+Si todo sale con un check verde, estamos listos. Fíjate en Connected device: ahí aparece el celular conectado por USB.
+
+33
+00:05:14,733 --> 00:05:25,667
+Ahora creamos el proyecto con flutter create. Con --org ponemos el identificador de nuestra empresa, y con --platforms indicamos que la app será para Android y para iPhone.
+
+34
+00:05:25,667 --> 00:05:30,500
+Listo. Ahora abrimos la carpeta yarbys con File, Open Folder.
+
+35
+00:05:30,500 --> 00:05:43,800
+Este es un proyecto de Flutter. Las carpetas android e ios tienen la configuración de cada sistema. En lib va nuestro código en Dart, y pubspec.yaml es como la lista de compras del proyecto: ahí van los paquetes que usamos.
+
+36
+00:05:43,800 --> 00:05:52,833
+flutter create nos dejó una app de ejemplo en lib, main.dart. Vamos a leerla juntos, porque así se arma cualquier app de Flutter.
+
+37
+00:05:52,833 --> 00:06:01,481
+Todo empieza en la función main: es lo primero que se ejecuta. Y runApp toma un widget, MyApp, y lo muestra en la pantalla.
+
+38
+00:06:02,467 --> 00:06:13,653
+MyApp es un StatelessWidget: un widget que no cambia. Su método build devuelve un MaterialApp, que define el título de la app, los colores, y en home, la primera pantalla.
+
+39
+00:06:14,667 --> 00:06:25,149
+MyHomePage, en cambio, es un StatefulWidget: tiene datos que cambian con el tiempo. Esos datos viven en otra clase, su estado: _MyHomePageState.
+
+40
+00:06:26,133 --> 00:06:37,106
+El estado guarda un contador. Y fíjate en setState: cambia el dato y le avisa a Flutter que vuelva a dibujar la pantalla. Esta idea la vamos a usar muchísimo.
+
+41
+00:06:38,033 --> 00:06:45,870
+Y build arma la pantalla con bloques: un Scaffold, que es la página, con una AppBar arriba, que muestra el título.
+
+42
+00:06:46,867 --> 00:06:55,633
+En el cuerpo, un Center con una columna de textos, y el botón flotante con el signo más, que al tocarlo llama a _incrementCounter.
+
+43
+00:06:55,633 --> 00:07:02,233
+Antes de ejecutarla, dos ajustes de Android. Abrimos android, app, build.gradle.kts.
+
+44
+00:07:02,233 --> 00:07:12,900
+Gemma necesita Android 11 o superior, que es la versión 30 de la API. Así que cambiamos minSdk por 30, con un comentario que explica por qué.
+
+45
+00:07:12,900 --> 00:07:17,900
+Y en android, app, src, main, abrimos AndroidManifest.xml.
+
+46
+00:07:17,900 --> 00:07:23,767
+Aquí cambiamos el nombre que se ve debajo del ícono: YARBYS, en mayúsculas.
+
+47
+00:07:23,767 --> 00:07:36,169
+Ahora sí, a ejecutarla. Con el celular conectado, abrimos main.dart y presionamos F5. Abajo a la derecha, en la barra de estado, se ve el dispositivo elegido: mi Pixel 8.
+
+48
+00:07:40,667 --> 00:07:50,233
+La primera vez tarda un poco: Flutter compila la app, la instala en el celular, y conecta el depurador. Todo lo que pase se ve aquí abajo, en la Debug Console.
+
+49
+00:07:50,233 --> 00:07:56,400
+Y ahí está, en mi celular. Esta es la app de ejemplo de Flutter. Si toco el botón más, el contador sube.
+
+50
+00:07:56,400 --> 00:08:05,333
+Cada toque llama a setState, y Flutter vuelve a dibujar el número. Fíjate también en la cinta que dice DEBUG: estamos en modo depuración.
+
+51
+00:08:05,333 --> 00:08:11,233
+Ahora, la magia de Flutter: el hot reload. Con la app corriendo, cambio el título de la pantalla.
+
+52
+00:08:11,233 --> 00:08:16,467
+En lugar de Flutter Demo Home Page, escribo: Hola, soy YARBYS.
+
+53
+00:08:17,067 --> 00:08:19,767
+Y guardo con Control + S.
+
+54
+00:08:19,767 --> 00:08:26,600
+Y el cambio aparece en el celular al instante, sin volver a compilar, y sin perder el contador, que sigue en tres.
+
+55
+00:08:26,600 --> 00:08:33,839
+Así vamos a trabajar todo el curso: escribimos, guardamos, y vemos el resultado de inmediato.
+
+56
+00:08:33,967 --> 00:08:41,767
+Y listo. En este video viste el resultado final, entendiste cómo funciona, y ya tienes el proyecto corriendo en tu celular.
+
+57
+00:08:41,767 --> 00:08:55,555
+En el próximo video empieza lo bueno: descargamos Gemma 4, escribimos su cerebro, y le hacemos su primera pregunta, todavía sin pantalla, mirando la respuesta en la consola. ¡Nos vemos en el siguiente video!

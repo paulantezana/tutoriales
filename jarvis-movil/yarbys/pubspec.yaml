@@ -34,16 +34,14 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
-  flutter_edge_ai: ^2.3.2
-  flutter_edge_ai_litertlm: ^1.13.2
-  flutter_edge_ai_rag: ^1.1.0
-  flutter_edge_ai_qdrant: ^2.1.0
+  flutter_edge_ai: ^2.3.3
+  flutter_edge_ai_litertlm: ^1.13.3
   sqflite: ^2.4.4+2
-  path_provider: ^2.1.6
   path: ^1.9.1
+  flutter_edge_ai_rag: ^1.1.1
+  flutter_edge_ai_qdrant: ^2.1.0
+  path_provider: ^2.1.6
   file_picker: ^13.1.0
-  flutter_secure_storage: ^11.2.0
-  http: ^1.6.0
   speech_to_text: ^7.5.0
   flutter_tts: ^4.2.5
 

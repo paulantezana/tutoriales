@@ -7,6 +7,7 @@ const P = new URLSearchParams(location.search);
 const ID = P.get("id");
 const DUR = parseFloat(P.get("dur") || "10");
 const M = (P.get("m") || "0").split(",").map(Number);
+const DATOS = JSON.parse(P.get("d") || "{}");  // datos extra de la escena (por ejemplo, qué modelo)
 
 gsap.registerPlugin(SplitText, DrawSVGPlugin, MotionPathPlugin);
 const tl = gsap.timeline({ paused: true });
@@ -825,6 +826,65 @@ ESCENAS.final = () => {
   tl.to(esc, { opacity: 0, duration: 0.8 }, DUR - 0.8);
 };
 
+// ¿De dónde sale la URL de un modelo? (pasos en Hugging Face y partes del enlace)
+ESCENAS.hf = () => {
+  const D = DATOS;
+  formas(0);
+  cabecera("¿De dónde sale la URL?", "link", `El enlace de <span class='acento'>${D.nombre}</span>`, "Los modelos abiertos se publican en Hugging Face");
+  const pasos = [
+    ["globe", "1 · Entra a", `<span class="mono" style="color:${C.celeste}">huggingface.co</span>`],
+    ["search", "2 · Busca", `<span class="mono" style="color:${C.amarillo}">${D.busqueda}</span>`],
+    ["folder-open", "3 · Abre la pestaña", `<b>Files and versions</b>`],
+    ["download", "4 · En el archivo", `clic derecho en <b>descargar</b> → <b>Copiar dirección del enlace</b>`],
+  ];
+  const cs = pasos.map(([i, t, d], k) => nuevo("div", "panel", `
+      <div class="cuadro-icono" style="width:66px;height:66px;background:${C.celeste}26;color:${C.celeste}">${ico(i, 36)}</div>
+      <div style="font:800 26px 'Open Sans';margin-top:18px">${t}</div>
+      <div style="font:400 24px/1.4 Lato;margin-top:8px;word-break:break-word">${d}</div>`,
+    esc, `left:${140 + k * 415}px;top:350px;width:390px;height:280px;padding:28px`));
+  subir(cs, 0.8, { stagger: 0.15 });
+  cs.forEach((c, k) => { resaltar(c, m(1) + k * Math.max(1.2, (m(2) - m(1)) / 4), C.amarillo); normal(c, m(1) + (k + 1) * Math.max(1.2, (m(2) - m(1)) / 4)); });
+
+  // Las partes del enlace
+  const caja = nuevo("div", "panel", "", esc, "left:140px;top:670px;width:1640px;height:290px;padding:28px 34px");
+  nuevo("div", "etiqueta", "Las partes del enlace", caja);
+  const fila = nuevo("div", "", "", caja, "position:relative;margin-top:26px;font:700 24px 'JetBrains Mono';white-space:nowrap");
+  const partes = [
+    ["https://huggingface.co/", C.gris, "el sitio"],
+    [D.cuenta, C.amarillo, "quién lo publica"],
+    ["/", null, ""],
+    [D.repo, C.celeste, "el modelo"],
+    ["/resolve/", C.gris, "descargar"],
+    [D.version, C.verde, D.version_txt],
+    ["/", null, ""],
+    [D.archivo, C.rojo, `el archivo · ${D.peso}`],
+  ];
+  const largo = partes.reduce((n, p) => n + p[0].length, 0);
+  fila.style.fontSize = `${Math.min(26, Math.floor(1560 / (largo * 0.6)))}px`;
+  const spans = partes.map(([t, c]) => nuevo("span", "", t, fila, `color:${c || "#fff"};${c ? `border-bottom:4px solid ${c};padding-bottom:6px` : ""}`));
+  // etiquetas debajo de cada parte, en dos filas para que no se encimen
+  const etiquetas = [];
+  let fila2 = 0;
+  partes.forEach(([t, c, et], i) => {
+    if (!c) return;
+    const sp = spans[i];
+    const e = nuevo("div", "", et, fila, `position:absolute;left:${sp.offsetLeft}px;top:${46 + (fila2 % 2) * 32}px;font:700 19px Lato;color:${c};white-space:nowrap`);
+    fila2++;
+    etiquetas.push([sp, e]);
+  });
+  const segs = etiquetas.flat();
+  subir(caja, m(2));
+  etiquetas.forEach(([sp, e], i) => {
+    tl.from(sp, { opacity: 0.25, duration: 0.4 }, m(2) + 0.6 + i * 0.4);
+    tl.from(e, { opacity: 0, y: 10, duration: 0.4 }, m(2) + 0.6 + i * 0.4);
+  });
+  if (D.nota) {
+    const nota = nuevo("div", "pastilla", `${ico("check", 26, C.verde)}${D.nota}`, caja, "position:absolute;left:34px;bottom:24px;font-size:21px;padding:10px 18px");
+    pop(nota, m(3) || m(2) + 3);
+  }
+  salida();
+};
+
 // ------------------------------------------------------------- arranque
 document.fonts.ready.then(() => {
   (ESCENAS[ID] || (() => {}))();
@@ -832,3 +892,150 @@ document.fonts.ready.then(() => {
   window.__listo = true;
 });
 window.seek = (t) => { tl.seek(Math.max(0, Math.min(t, DUR)), false); return 0; };
+
+// ============================================================= CURSO (9 videos)
+// Núcleo de la app final: tres anillos que giran y un centro (igual que widgets/nucleo.dart)
+function nucleo3(padre, x, y, R, velocidad = 1, color = C.celeste) {
+  const s = svg(R * 2.2, R * 2.2, padre, `left:${x - R * 1.1}px;top:${y - R * 1.1}px`);
+  s.setAttribute("viewBox", `${-R * 1.1} ${-R * 1.1} ${R * 2.2} ${R * 2.2}`);
+  const arco = (r, a0, largo, ancho) => {
+    const p0 = [r * Math.cos(a0), r * Math.sin(a0)], p1 = [r * Math.cos(a0 + largo), r * Math.sin(a0 + largo)];
+    return trazo(s, `M${p0[0]} ${p0[1]} A${r} ${r} 0 ${largo > Math.PI ? 1 : 0} 1 ${p1[0]} ${p1[1]}`, color, ancho);
+  };
+  const ext = trazo(s, `M${R * 0.95} 0 A${R * 0.95} ${R * 0.95} 0 1 1 ${-R * 0.95} 0 A${R * 0.95} ${R * 0.95} 0 1 1 ${R * 0.95} 0`, color, R * 0.02);
+  const g1 = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  const g2 = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  s.appendChild(g1); s.appendChild(g2);
+  g1.appendChild(arco(R * 0.8, 0, Math.PI * 0.7, R * 0.07));
+  g1.appendChild(arco(R * 0.8, Math.PI, Math.PI * 0.7, R * 0.07));
+  g2.appendChild(arco(R * 0.64, 0, Math.PI * 1.2, R * 0.03));
+  const cen = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  cen.setAttribute("r", R * 0.42); cen.setAttribute("fill", color + "28"); cen.setAttribute("stroke", color); cen.setAttribute("stroke-width", R * 0.02);
+  s.appendChild(cen);
+  const o = { t: 0 };
+  tl.to(o, { t: DUR, duration: DUR, ease: "none", onUpdate: () => {
+    g1.setAttribute("transform", `rotate(${(o.t * 34 * velocidad).toFixed(2)})`);
+    g2.setAttribute("transform", `rotate(${(-o.t * 52 * velocidad).toFixed(2)})`);
+  } }, 0);
+  return s;
+}
+
+// Portada de cada video: número, título, qué se hace hoy y el resultado
+ESCENAS.portada = () => {
+  const D = DATOS;
+  formas(0);
+  // columna izquierda: todo fluye hacia abajo, así un título largo no tapa el resto
+  const col = nuevo("div", "", "", esc, "position:absolute;left:140px;top:130px;width:1040px;display:flex;flex-direction:column;gap:18px");
+  const k = nuevo("div", "kicker", `${ico("clapperboard", 24)}Curso YARBYS · Video ${D.num} de ${D.total}`, col, "position:relative;align-self:flex-start");
+  const h = nuevo("h1", "titulo", D.titulo, col, "position:relative;margin:0");
+  const sp = new SplitText(h, { type: "lines,words", linesClass: "linea-titulo" });
+  tl.from(k, { y: 20, opacity: 0, duration: 0.5 }, 0.1);
+  tl.from(sp.words, { yPercent: 110, duration: 0.8, stagger: 0.05, ease: "power4.out" }, 0.25);
+  const sub = nuevo("div", "subtitulo", D.sub, col, "position:relative;margin:0");
+  subir(sub, 0.7);
+  nuevo("div", "etiqueta", "Hoy vamos a", col, "position:relative;margin-top:18px");
+  const ps = D.puntos.map(([i, t]) => nuevo("div", "panel", `${ico(i, 34, C.celeste)}<span style="font:700 27px Lato">${t}</span>`, col, "position:relative;display:flex;align-items:center;gap:18px;padding:14px 22px;width:900px"));
+  subir(ps, m(1), { stagger: 0.35 });
+  const res = nuevo("div", "panel", `<div class="etiqueta" style="position:relative;color:${C.verde}">${ico("circle-check", 22, C.verde)} Al final del video</div>
+      <div style="display:flex;align-items:center;gap:20px;margin-top:18px">${ico(D.icono || "smartphone", 64, C.amarillo)}
+      <div style="font:800 32px/1.25 'Open Sans'">${D.resultado}</div></div>`, esc,
+    `left:1250px;top:560px;width:540px;padding:28px 30px;border-color:${C.verde}`);
+  pop(res, m(2));
+  salida();
+};
+
+// Dónde estamos: las tres capas de la arquitectura; lo hecho, lo de hoy y lo que falta
+ESCENAS.mapa = () => {
+  const D = DATOS;
+  const hechos = new Set(D.hechos || []), hoy = new Set(D.hoy || []);
+  formas(1);
+  cabecera(D.kicker || "Dónde estamos", "map", D.titulo || "La arquitectura de <span class='acento'>YARBYS</span>");
+  const cel = nuevo("div", "", "", esc, `position:absolute;left:140px;top:300px;width:1400px;height:680px;border:4px solid ${C.borde};border-radius:48px;background:#2b3035`);
+  nuevo("div", "pastilla", `${ico("smartphone", 28, C.celeste)}Tu celular`, cel, "position:absolute;left:40px;top:-28px;background:var(--fondo);font-size:22px;padding:8px 18px");
+  aparecer(cel, 0.4);
+  const caja = (id, x, y, w, icono, titulo, sub, color) => {
+    const e = nuevo("div", "panel", `${ico(icono, 34, color)}<div><div style="font:800 24px 'Open Sans'">${titulo}</div><div class="mono" style="font-size:16px;color:var(--suave)">${sub}</div></div>`,
+      cel, `left:${x}px;top:${y}px;width:${w}px;height:96px;display:flex;align-items:center;gap:14px;padding:0 20px`);
+    e.dataset.id = id;
+    return e;
+  };
+  const filas = [
+    ["Pantallas · lo que ves", 70, [["inicio", "download", "Inicio", "inicio.dart"], ["chat", "message-circle", "Chat", "chat.dart"], ["documentos", "file-text", "Documentos", "documentos.dart"]], "#02569b"],
+    ["El asistente", 300, [["yarbys", "sparkles", "Yarbys", "yarbys.dart · preguntar()"]], C.amarillo],
+    ["Servicios · sin pantallas", 530, [["modelos", "download", "Modelos", "modelos.dart"], ["cerebro", "brain", "Cerebro", "cerebro.dart"], ["memoria", "history", "Memoria", "memoria.dart"], ["conocimiento", "scan-search", "Conocimiento", "conocimiento.dart"], ["voz", "audio-lines", "Voz", "voz.dart"]], C.celeste],
+  ];
+  const cajas = [];
+  filas.forEach(([et, y, items, color], f) => {
+    const etq = nuevo("div", "etiqueta", et, cel, `position:absolute;left:40px;top:${y - 34}px`);
+    const ancho = (1320 - 24 * (items.length - 1)) / items.length;
+    const fila = items.map(([id, i, t, s], k) => caja(id, 40 + k * (ancho + 24), y, ancho, i, t, s, color));
+    subir([etq, ...fila], (D.explicar ? m(f) : 0.5 + f * 0.25) + 0.3, { stagger: 0.08 });
+    cajas.push(...fila);
+  });
+  // flechas: pantallas → yarbys → servicios
+  flecha(840, 300 + 166, 840, 300 + 296, (D.explicar ? m(1) : 1.0) + 0.4, C.suave, 3);
+  flecha(840, 300 + 396, 840, 300 + 526, (D.explicar ? m(2) : 1.2) + 0.4, C.suave, 3);
+  if (D.explicar) {
+    // Recorrido por las capas y la regla: las pantallas solo hablan con Yarbys
+    const regla = nuevo("div", "pastilla", `${ico("shield-check", 26, C.verde)}Las pantallas solo hablan con Yarbys`, cel, `position:absolute;right:40px;top:240px;font-size:22px;color:${C.verde}`);
+    pop(regla, m(3));
+    cajas.filter((c) => c.dataset.id === "yarbys").forEach((c) => resaltar(c, m(3), C.verde));
+  } else {
+    const tHoy = m(1);
+    cajas.forEach((c) => {
+      const id = c.dataset.id;
+      if (hoy.has(id)) {
+        resaltar(c, tHoy, C.amarillo);
+        const b = nuevo("div", "", "Hoy", c, `position:absolute;right:-12px;top:-14px;padding:3px 12px;border-radius:99px;background:${C.amarillo};color:#1b1b1b;font:800 16px 'Open Sans'`);
+        pop(b, tHoy + 0.2);
+      } else if (!hechos.has(id)) {
+        apagar(c, tHoy, 0.3);
+      } else {
+        const b = nuevo("div", "", ico("check", 18, "#fff"), c, `position:absolute;right:-10px;top:-12px;width:30px;height:30px;border-radius:50%;background:${C.verde};display:grid;place-items:center`);
+        pop(b, tHoy + 0.2);
+      }
+    });
+  }
+  salida();
+};
+
+// Cierre de cada video: lo que logramos y lo que sigue
+ESCENAS.siguiente = () => {
+  const D = DATOS;
+  formas(0);
+  cabecera("Fin del video " + D.num, "circle-check", D.titulo || "¡Lo <span class='acento'>logramos</span>!");
+  const lista = nuevo("div", "", "", esc, "position:absolute;left:140px;top:330px;width:880px;display:grid;gap:18px");
+  const ls = D.logros.map((t) => nuevo("div", "panel", `<span class="cuadro-icono" style="width:52px;height:52px;background:${C.verde}26;color:${C.verde}">${ico("check", 30)}</span><span style="font:700 27px/1.3 Lato">${t}</span>`, lista, "position:relative;display:flex;align-items:center;gap:20px;padding:14px 22px"));
+  subir(ls, 0.6, { stagger: 0.3 });
+  if (D.sig) {
+    const card = nuevo("div", "panel", `<div class="etiqueta" style="position:relative;color:${C.amarillo}">${ico("arrow-right", 22, C.amarillo)} En el próximo video</div>
+        <div style="font:800 24px 'Open Sans';color:var(--suave);margin-top:22px">Video ${D.sig.num}</div>
+        <div style="font:800 44px/1.15 'Open Sans';margin-top:6px">${D.sig.titulo}</div>
+        <div style="font:400 26px/1.4 Lato;color:var(--suave);margin-top:16px">${D.sig.sub}</div>`, esc,
+      `left:1100px;top:330px;width:680px;padding:34px 36px;border-color:${C.amarillo}`);
+    pop(card, Math.min(m(1), 3.2));
+  } else {
+    const nu = nucleo3(esc, 1440, 560, 200, 1);
+    dibujarAnillos(nu, m(1), 1.2);
+  }
+  salida();
+};
+
+// Los 9 videos del curso y lo que se ve funcionando al final de cada uno
+ESCENAS.temario = () => {
+  const D = DATOS;
+  formas(1);
+  cabecera("El curso", "list-checks", "9 videos, y en cada uno <span class='acento'>algo funciona</span>");
+  const cs = D.videos.map(([t, r, i], k) => {
+    const actual = D.actual === k + 1;
+    return nuevo("div", "panel", `<div style="display:flex;align-items:center;gap:14px">
+        <span style="width:46px;height:46px;border-radius:12px;display:grid;place-items:center;background:${actual ? C.amarillo : C.celeste + "26"};color:${actual ? "#1b1b1b" : C.celeste};font:800 24px 'Open Sans'">${k + 1}</span>
+        <span style="font:800 25px/1.15 'Open Sans'">${t}</span></div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:14px;font:400 20px/1.3 Lato;color:var(--suave)">${ico(i, 26, C.verde)}${r}</div>`,
+      esc, `left:${140 + (k % 3) * 560}px;top:${300 + Math.floor(k / 3) * 230}px;width:530px;height:200px;padding:24px 26px;${actual ? `border-color:${C.amarillo}` : ""}`);
+  });
+  subir(cs.slice(0, 3), m(0) + 0.6, { stagger: 0.12 });
+  subir(cs.slice(3, 6), m(1), { stagger: 0.12 });
+  subir(cs.slice(6), m(2), { stagger: 0.12 });
+  salida();
+};

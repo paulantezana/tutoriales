@@ -226,18 +226,18 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_edge_ai
-      sha256: "1be99ff7d86c68332571ea3252844457dfc3f69afda0f6f2da7622ce4a7787ec"
+      sha256: c0dd3775566256013b8303c7792ed5b4f45bb2039b7d529f7e00b259f9cf6729
       url: "https://pub.dev"
     source: hosted
-    version: "2.3.2"
+    version: "2.3.3"
   flutter_edge_ai_litertlm:
     dependency: "direct main"
     description:
       name: flutter_edge_ai_litertlm
-      sha256: a804f2b0eea6f7d4446b1bc1ef76af0acdd7a3c77e0b3d2040eaacfc335b1c7a
+      sha256: "10a4be5a7f1c4f104e1052f23835762cfa53e90c139c1e4b88703aa462d0efbc"
       url: "https://pub.dev"
     source: hosted
-    version: "1.13.2"
+    version: "1.13.3"
   flutter_edge_ai_qdrant:
     dependency: "direct main"
     description:
@@ -250,10 +250,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_edge_ai_rag
-      sha256: b8da27f483cc13cd626ec866b30842ec8ad4622b55bd51a8dd670b54e3d10322
+      sha256: fdba45ee6857ad1d34bdf24234d874a79f6cdbb77f408aff735d6bbd18af42fe
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.0"
+    version: "1.1.1"
   flutter_lints:
     dependency: "direct dev"
     description:
@@ -262,54 +262,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.0.0"
-  flutter_secure_storage:
-    dependency: "direct main"
-    description:
-      name: flutter_secure_storage
-      sha256: d4e1fb6b2cb524868929e78dc0282fa000554b22060fb53789dc481c9fc95bb8
-      url: "https://pub.dev"
-    source: hosted
-    version: "11.2.0"
-  flutter_secure_storage_darwin:
-    dependency: transitive
-    description:
-      name: flutter_secure_storage_darwin
-      sha256: a031ceac9b070e62ef183cd7f7d1a8798ebde402d5049f0fe6eb3a51bd797a21
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.4.3"
-  flutter_secure_storage_linux:
-    dependency: transitive
-    description:
-      name: flutter_secure_storage_linux
-      sha256: caa75bd78f017422912e3a904933113b2428eb79f981ac37acd2dd2a700458ea
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.3"
-  flutter_secure_storage_platform_interface:
-    dependency: transitive
-    description:
-      name: flutter_secure_storage_platform_interface
-      sha256: "64951127f001f546891c86f414972bf49ef2c4c8a4c92c65f5790cc0c9100045"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.1.1"
-  flutter_secure_storage_web:
-    dependency: transitive
-    description:
-      name: flutter_secure_storage_web
-      sha256: "073a62b3aeb866ab4ce795f960413948e51e5a42a9b0c8333b6daf5bb3208a1c"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.1.1"
-  flutter_secure_storage_windows:
-    dependency: transitive
-    description:
-      name: flutter_secure_storage_windows
-      sha256: "471951813a97006d899db4948acc654a4f28c440083ea08178935ce20b173ec1"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.2.2"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -345,7 +297,7 @@ packages:
     source: hosted
     version: "2.0.2"
   http:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: http
       sha256: "87721a4a50b19c7f1d49001e51409bddc46303966ce89a65af4f4e6004896412"

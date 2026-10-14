@@ -6,3 +6,5 @@ video/preview/
 video/narracion.wav
 __pycache__/
 video/escenas/_demos/
+video/videos/*.mp4
+video/_partes/

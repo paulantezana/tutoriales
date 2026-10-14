@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <!-- Réplica visual de la app en cada etapa del curso (lib/ de curso/NN-*).
+       Se maneja en "tiempo virtual" con eventos (escenas/_demos/<id>.js). -->
+  <link rel="stylesheet" href="estilos.css">
+  <style>
+    .forma { position: absolute; }
+    #circulo { width: 900px; height: 900px; border-radius: 50%; background: var(--forma); left: 120px; top: 90px; }
+    #tel { position: absolute; left: 330px; top: 40px; width: 500px; height: 1000px; border-radius: 70px; background: #15181b; padding: 16px; }
+    #pantalla { position: relative; width: 468px; height: 968px; border-radius: 56px; overflow: hidden; font-family: Roboto, "Open Sans", sans-serif; }
+    #isla { position: absolute; left: 50%; top: 12px; width: 120px; height: 32px; border-radius: 16px; background: #000; transform: translateX(-50%); z-index: 50; }
+    .i { display: inline-grid; place-items: center; flex: none; }
+    .i svg { width: 100%; height: 100%; }
+    #estado { position: absolute; left: 0; right: 0; top: 0; height: 52px; display: flex; justify-content: space-between; align-items: center; padding: 6px 36px 0; font: 600 18px Roboto; z-index: 40; }
+    #estado .der { display: flex; gap: 8px; align-items: center; }
+    #app { position: absolute; inset: 0; }
+    .capa { position: absolute; left: 0; top: 0; width: 468px; height: 968px; overflow: hidden; }
+    /* ---------- piezas de Material 3 */
+    .appbar { position: absolute; left: 0; right: 0; top: 52px; height: 72px; display: flex; align-items: center; padding: 0 8px 0 20px; gap: 4px; }
+    .appbar .tit { flex: 1; font: 400 25px Roboto; white-space: nowrap; overflow: hidden; }
+    .appbar .atras { margin-left: -8px; margin-right: 10px; }
+    .btn-i { width: 52px; height: 52px; display: grid; place-items: center; border-radius: 50%; }
+    .btn-i.off { opacity: .38; }
+    .cuerpo { position: absolute; left: 0; right: 0; top: 124px; bottom: 0; }
+    .centro { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 36px; text-align: center; }
+    .filled { height: 46px; padding: 0 28px; border-radius: 23px; display: inline-flex; align-items: center; font: 600 17px Roboto; margin-top: 18px; }
+    .progreso { width: 100%; height: 5px; border-radius: 3px; overflow: hidden; margin-top: 4px; }
+    .progreso span { display: block; height: 100%; }
+    .fab { position: absolute; right: 20px; bottom: 30px; height: 64px; border-radius: 18px; display: flex; align-items: center; gap: 12px; padding: 0 24px; font: 600 18px Roboto; box-shadow: 0 3px 6px rgba(0,0,0,.25); }
+    .fab.cuadrado { width: 64px; padding: 0; justify-content: center; }
+    .tile { display: flex; align-items: center; gap: 22px; padding: 12px 18px 12px 22px; }
+    .tile .txt { flex: 1; min-width: 0; }
+    .tile .t1 { font: 400 19px Roboto; }
+    .tile .t2 { font: 400 16px Roboto; margin-top: 2px; }
+    /* chat básico */
+    .lista { position: absolute; left: 0; right: 0; overflow: hidden; }
+    .lista-int { position: absolute; left: 0; right: 0; bottom: 0; padding: 18px; }
+    .linea-msg { font: 400 17px/1.45 Roboto; padding: 7px 0; }
+    .linea-msg .fuente { font-size: 14px; margin-top: 2px; }
+    .entrada { position: absolute; left: 14px; right: 14px; display: flex; gap: 10px; align-items: center; }
+    .campo-sub { flex: 1; height: 56px; display: flex; align-items: center; font: 400 18px Roboto; border-bottom: 1.5px solid; white-space: nowrap; overflow: hidden; }
+    .mic { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+    /* chat final */
+    .burbuja { max-width: 78%; padding: 13px 16px; border-radius: 20px; font: 400 18px/1.42 Roboto; margin: 5px 0; }
+    .burbuja.u { margin-left: auto; }
+    .burbuja .fuente { font-size: 14px; margin-top: 6px; }
+    .campo-lleno { flex: 1; height: 60px; border-radius: 30px; display: flex; align-items: center; padding: 0 24px; font: 400 18px Roboto; white-space: nowrap; overflow: hidden; }
+    .cursor { display: inline-block; width: 2px; height: 22px; margin-left: 1px; vertical-align: middle; }
+    /* teclado */
+    #teclado { position: absolute; left: 0; right: 0; bottom: 0; height: 300px; padding: 10px 6px 26px; display: flex; flex-direction: column; gap: 9px; z-index: 30; }
+    #teclado .fila { display: flex; gap: 6px; justify-content: center; }
+    #teclado .k { height: 48px; flex: 1; max-width: 40px; border-radius: 8px; display: grid; place-items: center; font: 400 20px Roboto; }
+    #teclado .k.ancha { max-width: 200px; flex: 5; }
+    #teclado .k.esp { max-width: 62px; flex: 1.6; }
+    /* selector de archivos */
+    #selector { position: absolute; inset: 0; z-index: 32; }
+    #selector .hoja { position: absolute; left: 0; right: 0; bottom: 0; height: 520px; border-top-left-radius: 28px; border-top-right-radius: 28px; padding: 26px 22px; }
+    .archivo { display: flex; align-items: center; gap: 16px; padding: 14px 10px; font: 400 19px Roboto; border-radius: 12px; }
+    /* banner DEBUG de Flutter */
+    #debug { position: absolute; right: -54px; top: 30px; width: 200px; height: 26px; transform: rotate(45deg); background: rgba(183, 28, 28, .63); color: #fff; font: 700 15px Roboto; letter-spacing: 1px; display: grid; place-items: center; z-index: 45; }
+    #toque { position: absolute; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: rgba(120, 120, 120, .30); border: 3px solid rgba(255, 255, 255, .8); z-index: 60; pointer-events: none; }
+    /* panel de la derecha */
+    #der { position: absolute; left: 930px; top: 110px; width: 860px; }
+    #der h1 { font: 800 64px/1.1 "Open Sans"; margin: 22px 0 0; letter-spacing: -0.01em; }
+    #der h1 .acento { color: var(--secundario); }
+    #notas { margin-top: 40px; display: grid; gap: 18px; }
+    .nota { display: flex; align-items: center; gap: 20px; padding: 22px 26px; border-radius: 22px; background: var(--superficie); border: 2px solid var(--borde); font: 400 27px/1.35 Lato; }
+    .nota .cuadro { width: 64px; height: 64px; border-radius: 16px; display: grid; place-items: center; flex: none; }
+  </style>
+</head>
+<body class="oscuro">
+  <div id="escena">
+    <div class="forma" id="circulo"></div>
+    <div class="forma" style="width:46px;height:46px;border-radius:50%;background:var(--enfasis);left:250px;top:170px"></div>
+    <div class="forma" style="width:36px;height:36px;border-radius:9px;background:var(--terciario);left:880px;top:880px;transform:rotate(18deg)"></div>
+    <div class="forma" style="width:74px;height:74px;border-radius:50%;border:11px solid var(--secundario);left:200px;top:820px"></div>
+    <div id="tel"><div id="pantalla">
+      <div id="isla"></div>
+      <div id="estado"><span id="hora">9:41</span><span class="der" id="iconos-estado"></span></div>
+      <div id="app"></div>
+      <div id="debug">DEBUG</div>
+      <div id="toque"></div>
+    </div></div>
+    <div id="der"><span class="kicker" id="kicker"></span><h1 id="titulo"></h1><div id="notas"></div></div>
+  </div>
+  <script src="lib/iconos.js"></script>
+  <script src="celular.js"></script>
+</body>
+</html>
