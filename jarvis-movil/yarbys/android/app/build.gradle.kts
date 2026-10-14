@@ -19,7 +19,7 @@ android {
         applicationId = "com.paulantezana.yarbys"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        // Gemma 4 y EmbeddingGemma (.litertlm) necesitan Android 11 o superior
+        // Gemma 4 necesita Android 11 o superior
         minSdk = 30
         targetSdk = flutter.targetSdkVersion
         // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION

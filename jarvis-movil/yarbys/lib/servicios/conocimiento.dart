@@ -5,16 +5,18 @@ import 'package:flutter_edge_ai_rag/flutter_edge_ai_rag.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import '../datos.dart';
 import 'memoria.dart';
 
 /// Lo que YARBYS sabe de ti: tus documentos convertidos en vectores
-/// y guardados en Qdrant Edge, una base de datos vectorial dentro del celular.
+/// y guardados en Qdrant Edge, una base de datos vectorial en el celular.
 class Conocimiento {
   static late RagIndex _indice;
 
-  // Identifica el "espacio" de vectores de EmbeddingGemma 2.
+  // El tipo de vectores que crea EmbeddingGemma 2
   static const _perfil = 'embeddinggemma2-litertlm-text-4410a540ce75-prefix-v1';
 
+  /// Abre Qdrant y le dice que EmbeddingGemma crea los vectores.
   static Future<void> abrir() async {
     final carpeta = await getApplicationDocumentsDirectory();
     final rag = FlutterEdgeAiRag(
@@ -29,8 +31,8 @@ class Conocimiento {
     );
   }
 
-  /// Corta un texto largo en fragmentos de unos 800 caracteres,
-  /// respetando los párrafos para no partir una idea por la mitad.
+  /// Corta un texto en fragmentos de unos 800 caracteres,
+  /// sin partir los párrafos.
   static List<String> fragmentar(String texto, {int maximo = 800}) {
     final fragmentos = <String>[];
     var actual = '';
@@ -54,25 +56,26 @@ class Conocimiento {
     return fragmentos;
   }
 
-  /// Aprende un documento: lo fragmenta, crea un vector por fragmento
-  /// y los guarda en Qdrant. Devuelve cuántos fragmentos guardó.
+  /// Aprende un documento: guarda un vector por fragmento.
+  /// Devuelve cuántos fragmentos guardó.
   static Future<int> aprender(String nombre, String texto) async {
     final partes = fragmentar(texto);
-    final id = await Memoria.guardarDocumento(nombre, partes.length);
     for (var i = 0; i < partes.length; i++) {
       await _indice.add(
-        id: 'doc$id-$i',
+        id: '$nombre-$i',
         document: EmbeddingInput.text(partes[i]),
         metadata: jsonEncode({'documento': nombre}),
       );
     }
     await _indice.flush(); // guarda los cambios en el disco
+    await Memoria.guardarDocumento(nombre, partes.length);
     return partes.length;
   }
 
+  /// Olvida un documento: borra sus vectores y su registro.
   static Future<void> olvidar(Documento doc) async {
     for (var i = 0; i < doc.fragmentos; i++) {
-      await _indice.remove(id: 'doc${doc.id}-$i');
+      await _indice.remove(id: '${doc.nombre}-$i');
     }
     await _indice.flush();
     await Memoria.borrarDocumento(doc.id);

@@ -9,9 +9,8 @@ YARBYS es una app de Flutter con un asistente de IA que funciona sin internet. L
 | Base de datos vectorial | **Qdrant Edge** (`flutter_edge_ai_qdrant`) | En el celular |
 | Memoria del chat | **SQLite** (`sqflite`) | En el celular |
 | Voz | `speech_to_text` + `flutter_tts` (motores del sistema) | En el celular |
-| LLM externo (opcional, Pro) | OpenAI (`gpt-6-luna`) o Anthropic (`claude-haiku-5-5`) con tu API key | En la nube |
 
-Internet solo se usa una vez, para descargar los modelos. Después YARBYS funciona en modo avión. El LLM externo es opcional y se activa en **Ajustes**.
+Internet solo se usa una vez, para descargar los modelos. Después YARBYS funciona en modo avión.
 
 ## Probar el APK ya compilado (Android)
 
@@ -52,39 +51,38 @@ Se compila en una Mac con Xcode (iOS 15 o superior). En Xcode, en **Signing & Ca
 
 ## Cómo está organizado el código (`lib/`)
 
+Tres capas: las **pantallas** solo hablan con **`Yarbys`**, y `Yarbys` usa los **servicios**. Por eso la misma lógica funciona primero en la consola y después en la pantalla.
+
 ```
-main.dart                  arranca el motor de IA, la memoria y la app
-tema.dart                  colores (oscuros y planos) y la píldora de estado
+main.dart                  arranca el motor de IA y la memoria
+yarbys.dart                el asistente: une memoria + documentos + cerebro
+datos.dart                 Mensaje, Documento y EstadoYarbys
+tema.dart                  colores (oscuros y planos)
 servicios/
   modelos.dart             descarga Gemma 4 y EmbeddingGemma (una sola vez)
-  memoria.dart             SQLite: hilos, mensajes y documentos
+  cerebro.dart             le pasa el prompt a Gemma y devuelve los tokens
+  memoria.dart             SQLite: mensajes y documentos
   conocimiento.dart        RAG: fragmentar, crear vectores y buscar en Qdrant Edge
-  cerebro.dart             arma el prompt y responde con Gemma 4 o con un LLM externo
   voz.dart                 escuchar (voz a texto) y hablar (texto a voz)
-  ajustes.dart             modo local/externo, API key cifrada y la versión Pro
 pantallas/
-  inicio.dart              descarga de los modelos
+  inicio.dart              descarga los modelos y luego muestra el chat
   chat.dart                el chat con el núcleo animado
-  documentos.dart          agregar archivos .txt/.md o escribir notas
-  ajustes.dart             elegir el cerebro, la voz y borrar la memoria
+  documentos.dart          agregar y borrar archivos .txt/.md
 widgets/
-  nucleo.dart              el núcleo circular estilo JARVIS (CustomPainter)
+  nucleo.dart              el núcleo animado (CustomPainter)
+  burbuja.dart             una burbuja del chat
 ```
 
-El flujo de cada pregunta está en `pantallas/chat.dart` (`_enviar`):
+Cada pregunta pasa por `Yarbys.preguntar`:
 
-1. Lee los últimos mensajes del hilo (SQLite).
+1. Lee los últimos 6 mensajes (SQLite) y guarda tu pregunta.
 2. Busca en tus documentos los 3 fragmentos más parecidos (EmbeddingGemma + Qdrant Edge).
 3. Arma el prompt y Gemma 4 responde token por token.
-4. Guarda la respuesta en la memoria.
-5. La lee en voz alta.
+4. Guarda la respuesta. La pantalla la muestra y la lee en voz alta.
+
+El código de cada video del curso está en [`../curso/`](../curso/).
 
 ## Privacidad
 
-- **Modo local (por defecto):** nada sale del celular.
-- **LLM externo:** la pregunta y los fragmentos encontrados se envían al proveedor que elijas. Tus documentos, los vectores y la memoria siguen en el celular. La API key se guarda cifrada (Keystore en Android, Keychain en iPhone) y nunca va en el código.
+- Nada sale del celular: el modelo, tus documentos, los vectores y la memoria viven en el teléfono.
 - La voz usa el reconocimiento del sistema. En la mayoría de celulares funciona sin internet si tienes descargado el paquete de idioma español (Ajustes del teléfono → Idioma → Reconocimiento de voz sin conexión).
-
-## Versión Pro
-
-`Ajustes.esPro` (en `servicios/ajustes.dart`) controla el acceso al LLM externo. En este proyecto viene en `true`. Para venderlo como compra única, conéctalo con el paquete [`in_app_purchase`](https://pub.dev/packages/in_app_purchase).

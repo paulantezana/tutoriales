@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../datos.dart';
 import '../servicios/conocimiento.dart';
 import '../servicios/modelos.dart';
-import '../tema.dart';
 import '../widgets/nucleo.dart';
 import 'chat.dart';
 
-/// Primera pantalla: descarga los modelos (una sola vez) y abre el chat.
+/// La puerta de entrada: descarga los modelos (una sola vez)
+/// y después muestra el chat.
 class PantallaInicio extends StatefulWidget {
   const PantallaInicio({super.key});
 
@@ -15,183 +16,70 @@ class PantallaInicio extends StatefulWidget {
 }
 
 class _PantallaInicioState extends State<PantallaInicio> {
-  int _progresoEmbeddings = 0;
-  int _progresoGemma = 0;
-  bool _descargando = false;
-  String? _error;
+  String _aviso = 'Necesito descargar mis modelos de IA. Usa Wi-Fi.';
+  double? _progreso; // de 0 a 1; null mientras no descarga
+  bool _ocupado = false;
+  bool _listo = false;
 
   @override
   void initState() {
     super.initState();
-    // Si los modelos ya están en el celular, vamos directo al chat
-    if (Modelos.listos) _entrar();
+    // Si los modelos ya están en el celular, entramos directo
+    if (Modelos.listos) {
+      _ocupado = true;
+      _abrir();
+    }
   }
 
   Future<void> _descargar() async {
-    setState(() {
-      _descargando = true;
-      _error = null;
-    });
+    setState(() => _ocupado = true);
     try {
+      setState(() => _aviso = 'Descargando EmbeddingGemma (165 MB)');
       await Modelos.descargarEmbeddings(
-        (p) => setState(() => _progresoEmbeddings = p),
+        (p) => setState(() => _progreso = p / 100),
       );
-      await Modelos.descargarGemma((p) => setState(() => _progresoGemma = p));
-      await _entrar();
+      setState(() => _aviso = 'Descargando Gemma 4 (2.6 GB)');
+      await Modelos.descargarGemma((p) => setState(() => _progreso = p / 100));
+      await _abrir();
     } catch (e) {
       setState(() {
-        _descargando = false;
-        _error = 'No se pudo descargar: $e';
+        _aviso = 'No se pudo descargar: $e';
+        _ocupado = false;
       });
     }
   }
 
-  Future<void> _entrar() async {
-    try {
-      await Conocimiento.abrir(); // abre Qdrant con EmbeddingGemma
-    } catch (e) {
-      setState(() => _error = 'No pude abrir mi memoria de documentos: $e');
-      return;
-    }
-    if (!mounted) return;
-    Navigator.of(
-      context,
-    ).pushReplacement(MaterialPageRoute(builder: (_) => const PantallaChat()));
+  /// Abre Qdrant y muestra el chat.
+  Future<void> _abrir() async {
+    await Conocimiento.abrir();
+    setState(() => _listo = true);
   }
 
   @override
   Widget build(BuildContext context) {
-    // Modelos ya descargados: solo mostramos el núcleo mientras despierta
-    if (Modelos.listos && !_descargando && _error == null) {
-      return const Scaffold(
-        body: Center(child: Nucleo(estado: EstadoYarbys.pensando, tamano: 260)),
-      );
-    }
+    if (_listo) return const PantallaChat();
     return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(24),
-          children: [
-            const SizedBox(height: 12),
-            Center(
-              child: Nucleo(
-                estado: _descargando
-                    ? EstadoYarbys.pensando
-                    : EstadoYarbys.reposo,
-                tamano: 240,
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Hola, soy YARBYS',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Para funcionar sin internet necesito descargar mi cerebro una sola vez. '
-              'Usa Wi-Fi: son unos 2.8 GB.',
-              style: TextStyle(fontSize: 16, color: Colores.suave, height: 1.4),
-            ),
-            const SizedBox(height: 24),
-            _Descarga(
-              icono: Icons.hub_outlined,
-              titulo: 'EmbeddingGemma 2',
-              detalle: 'Convierte texto en vectores · 165 MB',
-              progreso: _progresoEmbeddings,
-            ),
-            const SizedBox(height: 12),
-            _Descarga(
-              icono: Icons.psychology_outlined,
-              titulo: 'Gemma 4 E2B',
-              detalle: 'El cerebro (LLM) · 2.6 GB',
-              progreso: _progresoGemma,
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 16),
-              Text(_error!, style: const TextStyle(color: Colores.rojo)),
-            ],
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: _descargando ? null : _descargar,
-              icon: const Icon(Icons.download),
-              label: Text(
-                _descargando ? 'Descargando...' : 'Descargar modelos',
-              ),
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(56),
-                backgroundColor: Colores.azul,
-                foregroundColor: Colors.white,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _Descarga extends StatelessWidget {
-  const _Descarga({
-    required this.icono,
-    required this.titulo,
-    required this.detalle,
-    required this.progreso,
-  });
-
-  final IconData icono;
-  final String titulo;
-  final String detalle;
-  final int progreso;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colores.superficie,
-        border: Border.all(color: Colores.borde),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icono, color: Colores.celeste),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      titulo,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                      ),
-                    ),
-                    Text(detalle, style: const TextStyle(color: Colores.suave)),
-                  ],
-                ),
+              Nucleo(
+                estado: _ocupado ? EstadoYarbys.pensando : EstadoYarbys.reposo,
               ),
-              Text(
-                progreso == 100 ? 'Listo' : '$progreso%',
-                style: TextStyle(
-                  color: progreso == 100 ? Colores.verde : Colores.celeste,
-                  fontWeight: FontWeight.w700,
+              const SizedBox(height: 32),
+              Text(_aviso, textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              if (_progreso != null) LinearProgressIndicator(value: _progreso),
+              if (!_ocupado)
+                FilledButton(
+                  onPressed: _descargar,
+                  child: const Text('Descargar modelos'),
                 ),
-              ),
             ],
           ),
-          const SizedBox(height: 12),
-          LinearProgressIndicator(
-            value: progreso / 100,
-            minHeight: 6,
-            borderRadius: BorderRadius.circular(3),
-            color: progreso == 100 ? Colores.verde : Colores.celeste,
-            backgroundColor: Colores.borde,
-          ),
-        ],
+        ),
       ),
     );
   }

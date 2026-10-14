@@ -5,6 +5,7 @@ Curso en video y código de **YARBYS**, un asistente de inteligencia artificial 
 | Carpeta | Contenido |
 |---|---|
 | [`yarbys/`](yarbys/) | La app de Flutter (Android y iPhone). Su README explica cómo compilarla y probarla. |
+| [`curso/`](curso/) | El código tal como queda al final de cada uno de los 9 videos del curso. |
 | [`documentos-ejemplo/`](documentos-ejemplo/) | `agenda.txt` y `perfil.txt`, los documentos que se usan en el video. |
 | [`video/`](video/) | El generador del video tutorial (`render.py`) con sus escenas animadas. |
 
@@ -17,7 +18,6 @@ Curso en video y código de **YARBYS**, un asistente de inteligencia artificial 
 | Base de datos vectorial | Qdrant Edge (`flutter_edge_ai_qdrant`) |
 | Memoria | SQLite (`sqflite`) |
 | Voz | `speech_to_text` y `flutter_tts` |
-| LLM externo (opcional, Pro) | OpenAI o Anthropic con la API key del usuario |
 
 ## Descargar el APK
 

@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Internet solo para descargar los modelos (y para el LLM externo opcional) -->
+    <!-- Internet: solo para descargar los modelos -->
     <uses-permission android:name="android.permission.INTERNET"/>
-    <!-- Micrófono para hablar con YARBYS -->
+    <!-- Micrófono: para hablar con YARBYS -->
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <application
         android:label="YARBYS"
@@ -45,7 +45,7 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
-        <!-- Reconocimiento de voz (speech_to_text) y lectura en voz alta (flutter_tts) -->
+        <!-- Reconocimiento de voz y lectura en voz alta del sistema -->
         <intent>
             <action android:name="android.speech.RecognitionService"/>
         </intent>
