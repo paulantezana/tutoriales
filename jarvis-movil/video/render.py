@@ -402,6 +402,7 @@ class Estado:
         self.capitulo = ""
         self.ocultar_mouse = False
         self.ficha = None          # (titulo, descripcion, elementos, activo, hechos): el mapa del archivo
+        self.rapido = None         # "x4" mientras el tecleo va acelerado
 
 
 # ============================================================== ESCENARIO / DIRECTOR
@@ -440,6 +441,8 @@ class Director:
         self.estado_terminales = {}
         self.log_yarbys = []   # (segundo, texto) que YARBYS dice en voz alta
         self.pos = None        # dónde se escribe (índice en el texto); None = al final
+        self.acel = None       # aceleración del tecleo en curso (None = no hay tecleo)
+        self._deuda = 0.0      # fracción de fotograma pendiente al teclear acelerado
         self.demos_app = []    # demos del celular (escenas/app.html)
         self.log_usuario = []  # (segundo, texto) que la persona le dice a YARBYS
 
@@ -577,9 +580,39 @@ class Director:
             self.pos -= 1
         self._poner_texto(nuevo, self._cursor_de(nuevo, pos - 1))
 
+    LIMITE_TECLEO = 8.0   # segundos de tecleo sin voz; si un bloque tarda más, se acelera (⏩)
+
+    def _empezar_tecleo(self, texto, cps):
+        """Calcula cuánto acelerar el tecleo para no dejar más de LIMITE_TECLEO segundos sin voz."""
+        estimado = len(texto) * 1.05 / cps + texto.count("\n") * 0.24
+        voz = max(0.0, self.say_hasta - self.t)
+        self.acel = max(1.0, estimado / (voz + self.LIMITE_TECLEO))
+        self._deuda = 0.0
+        if self.acel >= 1.5:
+            self.set(rapido=f"x{round(self.acel)}")
+
+    def _terminar_tecleo(self):
+        if self._deuda >= 0.5:
+            self.emit(1)
+        self.acel = None
+        self._deuda = 0.0
+        self.set(rapido=None)
+
+    def _avanzar(self, fotogramas):
+        """Emite fotogramas del tecleo; acelerado puede juntar varias teclas en un solo fotograma."""
+        self._deuda += fotogramas / (self.acel or 1.0)
+        n = int(self._deuda)
+        self._deuda -= n
+        self.emit(n)
+
     def escribir(self, texto, cps=17, errores=True, autocompletar=True):
         """Teclea como una persona: velocidad variable, sangría automática,
         algún error corregido y autocompletado en palabras largas."""
+        propio = self.acel is None
+        if propio:
+            self._empezar_tecleo(texto, cps)
+        if self.acel > 2:          # a toda velocidad no hay tiempo para errores ni sugerencias
+            errores = autocompletar = False
         r = self.rnd
         i = 0
         palabras_vistas = set(re.findall(r"[A-Za-z_]\w{6,}", self.texto()))
@@ -593,7 +626,7 @@ class Director:
                     j += 1
                 for c in texto[i:j]:
                     self._insertar(c)
-                self.emit(1)
+                self._avanzar(1)
                 i = j
                 continue
             # autocompletado en identificadores largos
@@ -605,16 +638,16 @@ class Director:
                 k = 3 if palabra in palabras_vistas else 4
                 for c in palabra[:k]:
                     self._insertar(c)
-                    self.emit(max(1, round(FPS / cps * r.uniform(0.7, 1.4))))
+                    self._avanzar(max(1, round(FPS / cps * r.uniform(0.7, 1.4))))
                 lin, col = self.s.cursor
                 otras = sorted({p for p in palabras_vistas | SUGERENCIAS
                                 if p.startswith(palabra[:k]) and p != palabra})[:4]
                 self.set(popup=((palabra,) + tuple(otras), palabra, lin, col - k))
-                self.wait(r.uniform(0.35, 0.6))
+                self._avanzar(FPS * r.uniform(0.35, 0.6))
                 for c in palabra[k:]:
                     self._insertar(c)
                 self.set(popup=None)
-                self.emit(2)
+                self._avanzar(2)
                 palabras_vistas.add(palabra)
                 i += len(palabra)
                 continue
@@ -633,8 +666,10 @@ class Director:
                 espera += FPS * r.uniform(0.12, 0.35)
             elif ch in ",:)":
                 espera += FPS * 0.05
-            self.emit(max(1, round(espera)))
+            self._avanzar(max(1, round(espera)))
             i += 1
+        if propio:
+            self._terminar_tecleo()
 
     def pegar(self, texto):
         """Pega un bloque de código de una vez (Ctrl + V)."""
@@ -833,14 +868,22 @@ class Director:
     # ---------- escribir un archivo por partes: primero el esqueleto, luego cada método
     def escribir_codigo(self, texto, cps=19):
         """Teclea código; las direcciones web no se teclean: se pegan (Ctrl + V)."""
-        for k, trozo in enumerate(re.split(r"(https?://[^'\"\s]+)", texto)):
+        trozos = re.split(r"(https?://[^'\"\s]+)", texto)
+        self._empezar_tecleo("".join(trozos[0::2]), cps)
+        for k, trozo in enumerate(trozos):
             if not trozo:
                 continue
             if k % 2:
+                acel, self.acel = self.acel, None
+                self.set(rapido=None)
                 self.wait(0.3)
                 self.pegar(trozo)
+                self.acel = acel
+                if acel >= 1.5:
+                    self.set(rapido=f"x{round(acel)}")
             else:
                 self.escribir(trozo, cps)
+        self._terminar_tecleo()
 
     def esqueleto(self, plan, quitar=(), modo="escribir", cps=20):
         """Escribe el archivo sin los bloques de 'quitar' (los cuerpos de los métodos)."""
@@ -1670,6 +1713,19 @@ def dibujar_capitulo(img, s):
     img.paste(capa, (int(W - 24 - w), TITLE_H + 7), capa)
 
 
+def dibujar_rapido(img, s):
+    """Etiqueta ⏩ x4 mientras el tecleo va acelerado (como un video adelantado)."""
+    w = F_UI_B.getlength(s.rapido) + 74
+    capa = Image.new("RGBA", (int(w), 44), (0, 0, 0, 0))
+    dc = ImageDraw.Draw(capa)
+    dc.rounded_rectangle((0, 0, w - 1, 43), 22, fill=(20, 22, 26, 235), outline=MARCA + (255,), width=2)
+    for k in range(2):
+        x = 20 + k * 15
+        dc.polygon([(x, 12), (x + 15, 22), (x, 32)], fill=(255, 255, 255))
+    dc.text((58, 22), s.rapido, font=F_UI_B, fill=(255, 255, 255), anchor="lm")
+    img.paste(capa, (int(W - MINIMAP - 30 - w), int(editor_bottom(s) - 64)), capa)
+
+
 # ============================================================== ESCENAS HTML (motion graphics)
 class SlideHTML:
     """Escena animada hecha con HTML + GSAP (escenas/escenas.js), renderizada con Chromium."""
@@ -2023,6 +2079,8 @@ def render(s, blink):
             dibujar_ficha(img, s)
         if s.nota:
             dibujar_nota(img, d, s)
+        if s.rapido:
+            dibujar_rapido(img, s)
         dibujar_capitulo(img, s)
         if s.tecla:
             dibujar_tecla(img, s)
@@ -3524,8 +3582,8 @@ def main():
     wav = AQUI / "narracion.wav"
     mezclar_audio(D, archivos, wav)
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(lista),
-                    "-i", str(wav), "-af", "loudnorm=I=-16:TP=-1.5:LRA=11", "-ar", "48000", "-ac", "2",
-                    "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
+                    "-i", str(wav), "-af", "loudnorm=I=-16:TP=-1.5:LRA=11", "-ar", "48000", "-ac", "1",
+                    "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "96k",
                     "-shortest", "-movflags", "+faststart", str(AQUI / "tutorial.mp4")], check=True)
     for t in trabajos:
         t[3].unlink()
