@@ -977,7 +977,7 @@ ESCENAS.mapa = () => {
   flecha(840, 300 + 396, 840, 300 + 526, (D.explicar ? m(2) : 1.2) + 0.4, C.suave, 3);
   if (D.explicar) {
     // Recorrido por las capas y la regla: las pantallas solo hablan con Yarbys
-    const regla = nuevo("div", "pastilla", `${ico("shield-check", 26, C.verde)}Las pantallas solo hablan con Yarbys`, esc, `position:absolute;left:1180px;top:230px;font-size:22px;color:${C.verde}`);
+    const regla = nuevo("div", "pastilla", `${ico("shield-check", 26, C.verde)}Las pantallas solo hablan con Yarbys`, cel, `position:absolute;right:40px;top:240px;font-size:22px;color:${C.verde}`);
     pop(regla, m(3));
     cajas.filter((c) => c.dataset.id === "yarbys").forEach((c) => resaltar(c, m(3), C.verde));
   } else {

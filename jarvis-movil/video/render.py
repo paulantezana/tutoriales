@@ -1658,7 +1658,7 @@ def dibujar_nota(img, d, s):
         ancho = int(F_NOTE_B.getlength(titulo)) + 110
     x0 = ED_X + GUTTER + 40
     y_debajo = ED_Y + (b - top + 1) * LH + 16
-    limite = editor_bottom(s) - 130
+    limite = editor_bottom(s) - (130 if SUBTITULOS else 24)
     if y_debajo + alto > limite:
         y0 = ED_Y + (a - top) * LH - alto - 16
         flecha_arriba = False
