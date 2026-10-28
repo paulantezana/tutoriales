@@ -675,7 +675,8 @@ def main():
     wav = AQUI / "narracion.wav"
     mezclar_audio(escenas, voz, total, wav)
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(video), "-i", str(wav), "-c:v", "copy",
-                    "-c:a", "aac", "-b:a", "160k", "-shortest", "-movflags", "+faststart",
+                    "-af", "loudnorm=I=-16:TP=-1.5:LRA=11", "-ar", "48000",   # volumen estándar para YouTube
+                    "-ac", "1", "-c:a", "aac", "-b:a", "112k", "-shortest", "-movflags", "+faststart",
                     str(AQUI / "tutorial.mp4")], check=True)
     escribir_textos(escenas, total)
     print("Listo: tutorial.mp4, subtitulos.srt y guion.md", flush=True)

@@ -1,0 +1,891 @@
+1
+00:00:00,700 --> 00:00:08,083
+Hola. En este tutorial vamos a construir, paso a paso, una villa navideña animada igual a la que viste en la tienda.
+
+2
+00:00:08,283 --> 00:00:16,138
+Tiene una iglesia con torre, una casa con tienda, una panadería, un río con luz azul y un árbol de Navidad con luces de colores.
+
+3
+00:00:16,338 --> 00:00:19,775
+Y lo mejor: una pista de patinaje que gira sola.
+
+4
+00:00:19,975 --> 00:00:28,386
+Te voy a explicar todo: los materiales, las herramientas, las medidas, la pintura, cómo se conectan las luces y cómo se arma el motor.
+
+5
+00:00:28,586 --> 00:00:33,427
+Y al final, cómo hace la fábrica para sacar copias exactas en polirresina.
+
+6
+00:00:35,233 --> 00:00:38,674
+Primero, veamos cómo está hecha la villa de la tienda.
+
+7
+00:00:38,874 --> 00:00:45,169
+Es de polirresina: una mezcla de resina poliéster con polvo de piedra, llamado carbonato de calcio.
+
+8
+00:00:45,369 --> 00:00:51,596
+La fábrica vacía esa mezcla en moldes de silicona, y por eso las casas salen huecas por dentro.
+
+9
+00:00:51,796 --> 00:00:58,918
+Dentro de las casas van luces LED, y debajo de la base hay un motor pequeño con engranajes que hace girar la pista.
+
+10
+00:00:59,118 --> 00:01:04,018
+Funciona con un cable USB de 5 V, o con 3 pilas AA.
+
+11
+00:01:04,218 --> 00:01:08,969
+La pintura es a mano, y la nieve es pintura blanca con escarcha encima.
+
+12
+00:01:10,767 --> 00:01:13,838
+Nosotros lo vamos a hacer en dos etapas.
+
+13
+00:01:14,038 --> 00:01:19,448
+En la etapa A construyes la pieza a mano, con foam, cartón pluma y masilla epóxica.
+
+14
+00:01:19,648 --> 00:01:23,282
+Esa ya es tu villa terminada, con luces y movimiento.
+
+15
+00:01:23,482 --> 00:01:31,098
+La etapa B es opcional: a esa pieza le sacas moldes de silicona y vacías copias en polirresina, igual que la fábrica.
+
+16
+00:01:31,298 --> 00:01:38,240
+Si solo quieres una villa, te basta con la etapa A. Si quieres hacer varias, o venderlas, sigue también la etapa B.
+
+17
+00:01:38,440 --> 00:01:43,886
+Calcula unos 3 o 4 fines de semana, porque hay que esperar varios secados.
+
+18
+00:01:45,700 --> 00:01:48,790
+Antes de empezar, un minuto de seguridad.
+
+19
+00:01:48,990 --> 00:01:55,749
+El cúter debe tener la hoja nueva. Corta siempre sobre una base de corte, y con la otra mano lejos del filo.
+
+20
+00:01:55,949 --> 00:02:02,060
+El cautín pasa de 300 grados: úsalo con su soporte y nunca lo dejes encendido solo.
+
+21
+00:02:02,260 --> 00:02:08,470
+La pistola de silicona también quema. Ten un vaso con agua fría cerca, por si te cae una gota.
+
+22
+00:02:08,670 --> 00:02:16,262
+Todo este proyecto funciona con 5 V. Nunca conectes nada directo al enchufe de 220 V.
+
+23
+00:02:16,462 --> 00:02:24,204
+Y en la etapa B, la resina suelta vapores tóxicos: necesitas respirador con filtros, guantes, lentes y mucha ventilación.
+
+24
+00:02:26,000 --> 00:02:28,164
+Estas son las herramientas.
+
+25
+00:02:28,364 --> 00:02:36,283
+Para cortar y medir: un cúter grande, un cúter de precisión, una regla metálica, una escuadra, un compás y una base de corte.
+
+26
+00:02:36,483 --> 00:02:43,822
+Para pegar: una pistola de silicona, de preferencia de baja temperatura, porque la de alta temperatura derrite el foam.
+
+27
+00:02:44,022 --> 00:02:52,893
+Para la electrónica: un cautín de 30 a 40 W con estaño, un multímetro, un pelacables, un alicate de corte y tubo termocontraíble.
+
+28
+00:02:53,093 --> 00:02:57,697
+Para perforar: un minitaladro con brocas de 3 y 5 mm.
+
+29
+00:02:57,897 --> 00:03:05,501
+Para pintar: pinceles planos y redondos, uno viejo para pincel seco, una espátula pequeña, una esponja y lija al agua.
+
+30
+00:03:05,701 --> 00:03:09,899
+Y una secadora de pelo, que te va a ahorrar mucho tiempo de espera.
+
+31
+00:03:11,700 --> 00:03:15,052
+Ahora los materiales, empezando por la estructura.
+
+32
+00:03:15,252 --> 00:03:22,344
+Una plancha de MDF de 5 mm para la base, cortada de 32 por 24 cm.
+
+33
+00:03:22,544 --> 00:03:31,913
+Foam de poliestireno extruido, el que venden como aislante térmico: una plancha de 5 cm y otra de 2.5 cm de grosor.
+
+34
+00:03:32,113 --> 00:03:37,590
+Si no lo consigues, usa tecnopor de alta densidad, aunque el detalle sale menos fino.
+
+35
+00:03:37,790 --> 00:03:43,530
+Cartón pluma, también llamado foam board, de 5 mm, para las paredes de las casas.
+
+36
+00:03:43,730 --> 00:03:49,578
+Cartulina gruesa o cartón gris de 2 mm, para los techos, las agujas y los marcos.
+
+37
+00:03:49,778 --> 00:03:55,128
+Masilla epóxica de dos componentes, tipo Poxilina, para las figuras y los adornos.
+
+38
+00:03:55,328 --> 00:04:03,493
+Y además: conos de tecnopor, palitos de brocheta, mondadientes, alambre delgado y una lámina de PVC espumado de 3 mm.
+
+39
+00:04:05,300 --> 00:04:06,684
+Para el acabado:
+
+40
+00:04:06,884 --> 00:04:13,299
+Masilla lista para drywall, que también se vende como pasta muro, y cola sintética, la goma blanca.
+
+41
+00:04:13,499 --> 00:04:18,663
+Mica transparente, papel celofán amarillo y papel albanene, para las ventanas.
+
+42
+00:04:18,863 --> 00:04:23,498
+Imprimante acrílico blanco, y pinturas acrílicas en estos colores.
+
+43
+00:04:23,698 --> 00:04:27,065
+Barniz acrílico brillante, para el hielo y el río.
+
+44
+00:04:27,265 --> 00:04:35,103
+Para la nieve: bicarbonato de sodio, cola y pintura blanca. Y escarcha iridiscente fina, que es el brillo que tiene la original.
+
+45
+00:04:35,303 --> 00:04:40,537
+Y barras de silicona transparentes, que sirven para los carámbanos y el agua del río.
+
+46
+00:04:42,333 --> 00:04:45,318
+Y la electrónica. Esta es la lista exacta.
+
+47
+00:04:45,518 --> 00:04:56,207
+16 LEDs blanco cálido: 8 de 5 mm difusos, para dentro de las casas, y 8 de 3 mm transparentes, que se ven como foquitos en las fachadas.
+
+48
+00:04:56,407 --> 00:05:03,912
+6 LEDs RGB de cambio lento, de dos patas: son los que cambian de color solos, como los del árbol de la original.
+
+49
+00:05:04,112 --> 00:05:07,331
+1 LED azul de 5 mm para el río.
+
+50
+00:05:07,531 --> 00:05:13,168
+Resistencias de un cuarto de watt: 20 de 220 ohmios y 10 de 100 ohmios.
+
+51
+00:05:13,368 --> 00:05:21,022
+Un cable USB, un interruptor pequeño, una placa perforada, cable delgado rojo y negro, termocontraíble y estaño.
+
+52
+00:05:21,222 --> 00:05:29,444
+Para el movimiento: un motorreductor N20 de 6 V y 10 RPM, con su soporte y una rueda para eje de 3 mm.
+
+53
+00:05:29,644 --> 00:05:34,629
+Y para alimentar todo, un cargador de celular de 5 V y 1 A.
+
+54
+00:05:36,433 --> 00:05:45,293
+Ahora, las medidas. La villa mide 32 cm de ancho, 24 de fondo, y unos 28 de alto hasta la punta de la torre.
+
+55
+00:05:45,493 --> 00:05:53,598
+Un truco muy útil: imprime la foto de la villa a 32 cm de ancho. Así mides cada casa directamente con la regla.
+
+56
+00:05:53,798 --> 00:06:02,502
+Mira la planta desde arriba. Atrás, en un nivel más alto de 9 cm de fondo, van la casa tudor, la iglesia y la casa del arco.
+
+57
+00:06:02,702 --> 00:06:08,254
+Adelante a la izquierda va la pista de patinaje: un círculo de 10 cm de diámetro.
+
+58
+00:06:08,454 --> 00:06:12,682
+En el centro baja el río, desde un puente de piedra hasta el borde.
+
+59
+00:06:12,882 --> 00:06:19,291
+Y adelante a la derecha va la panadería, con el árbol de Navidad a su lado y el muñeco de nieve en la esquina.
+
+60
+00:06:21,100 --> 00:06:23,658
+Y de frente, estas son las alturas.
+
+61
+00:06:23,858 --> 00:06:32,711
+La base, con el MDF y el foam, mide 5.5 cm adelante. El nivel de atrás sube 2.5 cm más.
+
+62
+00:06:32,911 --> 00:06:39,943
+Sobre su nivel, la casa tudor mide 11 cm hasta la punta del techo, la iglesia 12, y la torre 20.
+
+63
+00:06:40,143 --> 00:06:46,057
+La panadería mide 10 cm, el árbol de Navidad 9, y los pinos entre 6 y 12.
+
+64
+00:06:46,257 --> 00:06:52,078
+Las figuras miden 3.5 cm, y el muñeco de nieve 4.5.
+
+65
+00:06:53,867 --> 00:06:55,806
+Paso 1: la base.
+
+66
+00:06:56,006 --> 00:07:01,349
+Corta el MDF de 32 por 24 cm y lija los bordes.
+
+67
+00:07:01,549 --> 00:07:09,448
+Corta el foam de 5 cm del mismo tamaño. El cúter se pasa varias veces, sin forzar, y con la hoja siempre nueva.
+
+68
+00:07:09,648 --> 00:07:17,176
+De la plancha de 2.5 cm corta una franja de 32 por 9 cm. Ese es el nivel de atrás.
+
+69
+00:07:17,376 --> 00:07:20,949
+Todavía no pegues nada. Primero vamos a tallar.
+
+70
+00:07:22,733 --> 00:07:27,650
+Paso 2: tallar el terreno. Dibuja la planta con plumón sobre el foam.
+
+71
+00:07:27,850 --> 00:07:36,500
+Para la pista, marca con el compás un círculo de 10 cm y córtalo atravesando todo el foam. Debajo de ese hueco irá el motor.
+
+72
+00:07:36,700 --> 00:07:45,510
+El río es una canaleta de 2.5 cm de ancho y 8 mm de profundidad, que baja desde el nivel de atrás hasta el borde.
+
+73
+00:07:45,710 --> 00:07:54,825
+El borde delantero se talla como roca: corta pedazos irregulares, y luego presiona papel aluminio arrugado contra el foam para darle textura.
+
+74
+00:07:55,025 --> 00:08:02,713
+Ahora voltea el foam. Por debajo, haz canales de 1 cm para los cables, y que todos lleguen al hueco de la pista.
+
+75
+00:08:02,913 --> 00:08:07,780
+Atrás, abre una ranura para el interruptor y un agujero para el cable USB.
+
+76
+00:08:07,980 --> 00:08:17,487
+Ahora sí: pega el foam al MDF y el nivel de atrás encima, con cola sintética y mondadientes como clavos. Pon peso encima y deja secar una noche.
+
+77
+00:08:19,300 --> 00:08:24,116
+Paso 3: las casas. Se hacen con cartón pluma de 5 mm.
+
+78
+00:08:24,316 --> 00:08:32,383
+Cada casa son cuatro paredes: dos frentes con forma de pentágono, que llevan la punta del techo, y dos laterales rectangulares.
+
+79
+00:08:32,583 --> 00:08:42,681
+Para la casa tudor: dos frentes de 8 cm de ancho, con 7 cm de pared y 11 hasta la punta; y dos laterales de 4 por 7 cm.
+
+80
+00:08:42,881 --> 00:08:50,303
+Los laterales miden 1 cm menos que el fondo, porque van entre los frentes: es el grosor de los dos cartones.
+
+81
+00:08:50,503 --> 00:08:57,075
+Dibuja las ventanas y las puertas, y córtalas antes de armar, con el cúter de precisión, de esquina a esquina.
+
+82
+00:08:57,275 --> 00:09:03,359
+Arma las paredes con silicona y alfileres, y revisa con la escuadra que queden a 90 grados.
+
+83
+00:09:03,559 --> 00:09:12,964
+Deja las casas abiertas por abajo: por ahí van a entrar las luces. La iglesia, la casa del arco y la panadería se hacen igual, con las medidas de la tabla.
+
+84
+00:09:14,767 --> 00:09:17,256
+Paso 4: techos y torres.
+
+85
+00:09:17,456 --> 00:09:24,922
+Los techos son dos rectángulos de cartulina gruesa, que sobresalen medio centímetro por cada lado para formar el alero.
+
+86
+00:09:25,122 --> 00:09:33,164
+La torre grande es una caja de cartón pluma de 3.5 por 3.5 cm y 14 cm de alto.
+
+87
+00:09:33,364 --> 00:09:41,885
+Su aguja es una pirámide de cartulina: cuatro triángulos de 3.8 cm de base y 6.3 cm de alto.
+
+88
+00:09:42,085 --> 00:09:47,724
+Únelos con cinta por dentro, y en la punta pon un poco de masilla epóxica para afinarla.
+
+89
+00:09:47,924 --> 00:09:57,296
+La torre pequeña es igual, pero de 2.5 cm, con una aguja de 3 cm. Las chimeneas son cubitos de foam de 1 cm.
+
+90
+00:09:59,100 --> 00:10:04,203
+Paso 5: las texturas. Esto es lo que hace que se vea como la de fábrica.
+
+91
+00:10:04,403 --> 00:10:15,471
+Ladrillos: moja un poco el papel del cartón pluma, despégalo, y raya el foam con un lapicero sin tinta: filas de 4 mm, con cortes cada 8 mm, alternados.
+
+92
+00:10:15,671 --> 00:10:22,250
+Casa tudor: pega tiras de cartulina de 2 mm de ancho, como vigas de madera, en cruz y en diagonal.
+
+93
+00:10:22,450 --> 00:10:31,743
+Tejas: tiras de cartulina de 1 cm, con cortes cada 7 mm. Se pegan de abajo hacia arriba, y cada fila tapa la mitad de la anterior.
+
+94
+00:10:31,943 --> 00:10:38,833
+Los marcos de las ventanas son tiras finas de cartulina, y las barritas de la ventana son tiras de 1 mm.
+
+95
+00:10:39,033 --> 00:10:46,395
+Los toldos de la panadería son cartulina doblada en ondas, y el letrero es un rectángulo de 4 por 1 cm.
+
+96
+00:10:48,200 --> 00:10:50,257
+Paso 6: los árboles.
+
+97
+00:10:50,457 --> 00:10:57,031
+Los pinos se hacen con conos de tecnopor de 6, 9 y 12 cm, de los que venden en librerías.
+
+98
+00:10:57,231 --> 00:11:03,943
+Clava un palito de brocheta abajo, como tronco, y deja 1 cm afuera para clavarlo en el terreno.
+
+99
+00:11:04,143 --> 00:11:12,161
+Las ramas se forman con masilla espesa: ponla con la espátula de abajo hacia arriba, jalando hacia abajo, en capas, como faldas.
+
+100
+00:11:12,361 --> 00:11:20,952
+El árbol de Navidad es un cono de 9 cm. Antes de la masilla, hazle 4 agujeros de 5 mm para los LEDs de colores.
+
+101
+00:11:21,152 --> 00:11:27,617
+Por el centro del cono, de la punta a la base, abre un túnel con la brocheta: por ahí bajarán los cables.
+
+102
+00:11:27,817 --> 00:11:35,551
+La estrella se hace con silicona transparente sobre papel encerado, de 2 cm, y se pega sobre el LED de la punta.
+
+103
+00:11:37,367 --> 00:11:44,820
+Paso 7: las figuras. Puedes comprarlas hechas, en tiendas de nacimientos, o modelarlas con masilla epóxica.
+
+104
+00:11:45,020 --> 00:11:53,360
+La masilla son dos barras: mezcla partes iguales y amasa hasta que tenga un solo color. Tienes unos 15 minutos para trabajarla.
+
+105
+00:11:53,560 --> 00:12:03,585
+Para cada patinador, dobla un alambre como un muñequito de palitos de 3.5 cm, y cúbrelo de masilla: el cuerpo, la cabeza, el gorro y la bufanda.
+
+106
+00:12:03,785 --> 00:12:08,506
+En los pies pega dos trocitos de clip, que son las cuchillas de los patines.
+
+107
+00:12:08,706 --> 00:12:17,127
+El muñeco de nieve son tres bolitas de 22, 16 y 11 mm, con sombrero de copa, bufanda roja y nariz de zanahoria.
+
+108
+00:12:17,327 --> 00:12:21,219
+Deja endurecer las figuras una noche antes de pintarlas.
+
+109
+00:12:23,033 --> 00:12:29,337
+Paso 8: sellar. El foam no se pinta directo, y no acepta pintura en spray: el spray lo derrite.
+
+110
+00:12:29,537 --> 00:12:38,309
+Mezcla 3 partes de masilla con 1 de cola sintética, y pásala con brocha por todo el terreno y las rocas. Así la superficie queda dura.
+
+111
+00:12:38,509 --> 00:12:43,731
+En las uniones de las casas, pasa la masilla con el dedo húmedo, para que no se noten.
+
+112
+00:12:43,931 --> 00:12:50,286
+Cuando seque, lija suave y da una mano de imprimante blanco a todo: casas, techos, árboles y figuras.
+
+113
+00:12:50,486 --> 00:12:55,402
+Si vas a sacar moldes en la etapa B, este es el momento: antes de pintar.
+
+114
+00:12:57,200 --> 00:13:02,111
+Paso 9: la pintura. Se usan tres técnicas, siempre en este orden.
+
+115
+00:13:02,311 --> 00:13:06,527
+Uno, la capa base: el color principal, en dos manos finas.
+
+116
+00:13:06,727 --> 00:13:16,267
+Dos, la aguada: pintura oscura muy diluida, 1 parte de pintura por 5 de agua, con una gota de lavavajilla. Se mete en las ranuras y marca las sombras.
+
+117
+00:13:16,467 --> 00:13:26,529
+Tres, el pincel seco: carga el pincel viejo con un color claro, quita casi toda la pintura en un papel, y pásalo rápido por encima. Solo pinta los relieves.
+
+118
+00:13:26,729 --> 00:13:33,205
+Con estas tres técnicas, los ladrillos, las tejas y las rocas se ven igual que en la pieza de fábrica.
+
+119
+00:13:35,000 --> 00:13:39,013
+Y estos son los colores de cada parte, mirando la original.
+
+120
+00:13:39,213 --> 00:13:43,760
+Tejas: siena tostada con rojo óxido, y pincel seco terracota.
+
+121
+00:13:43,960 --> 00:13:49,015
+Iglesia: ladrillo rojo óxido, aguada marrón oscuro, y marcos blancos.
+
+122
+00:13:49,215 --> 00:13:54,529
+Casa tudor: paredes crema, vigas marrón muy oscuro, y la vitrina con marco rojo.
+
+123
+00:13:54,729 --> 00:14:01,018
+Panadería: amarillo crema, toldos a rayas rojas y blancas, y el letrero blanco con letras rojas.
+
+124
+00:14:01,218 --> 00:14:06,185
+Rocas: gris oscuro, con pincel seco gris claro. Puertas: verde oscuro.
+
+125
+00:14:06,385 --> 00:14:14,041
+Pinos: verde oscuro, con pincel seco verde hoja. Y el árbol de Navidad, verde con escarcha verde y bolitas rojas.
+
+126
+00:14:14,241 --> 00:14:19,772
+Para las rayas de los toldos, usa cinta de pintor cortada en tiras de 4 mm.
+
+127
+00:14:21,567 --> 00:14:24,691
+Paso 10: el mecanismo de la pista que gira.
+
+128
+00:14:24,891 --> 00:14:35,714
+Por dentro va así: abajo el MDF, un taco de madera pegado al MDF, el motor sujeto al costado del taco con su soporte, la rueda en el eje, y encima el disco de la pista.
+
+129
+00:14:35,914 --> 00:14:44,615
+El disco es de PVC espumado de 3 mm y mide 9.5 cm: medio centímetro menos que el hueco, para que no roce.
+
+130
+00:14:44,815 --> 00:14:51,238
+Marca el centro exacto del hueco con el compás: ahí debe quedar el eje del motor, apuntando hacia arriba.
+
+131
+00:14:51,438 --> 00:14:57,513
+A la rueda quítale la llanta de goma, y pega el disco encima con pegamento epóxico, bien centrado.
+
+132
+00:14:57,713 --> 00:15:06,988
+El disco debe quedar 8 mm por debajo del borde de la pista: antes de apretar los tornillos del soporte, sube o baja el motor hasta lograrlo.
+
+133
+00:15:07,188 --> 00:15:13,530
+La rueda entra a presión en el eje: así puedes sacar la pista cuando quieras para revisar el motor.
+
+134
+00:15:13,730 --> 00:15:23,374
+A 5 V, este motor da unas 8 vueltas por minuto. Si lo quieres más lento, ponle en serie una resistencia de 22 a 47 ohmios.
+
+135
+00:15:25,167 --> 00:15:30,846
+Pinta el disco de celeste muy claro, con algunas curvas blancas, como marcas de patines.
+
+136
+00:15:31,046 --> 00:15:37,105
+Dale 3 manos de barniz brillante, dejando secar cada una. Así parece hielo de verdad.
+
+137
+00:15:37,305 --> 00:15:42,780
+Pega los patinadores a 3 cm del centro, mirando hacia donde gira el disco.
+
+138
+00:15:42,980 --> 00:15:50,101
+Alrededor del hueco, haz un murito de masilla de 1 cm de alto, píntalo como piedra y ponle nieve encima.
+
+139
+00:15:51,900 --> 00:15:57,065
+Paso 11: la electrónica. Primero entendamos el circuito, que es muy simple.
+
+140
+00:15:57,265 --> 00:16:03,744
+El cable USB trae dos hilos: el rojo es el positivo, de 5 V, y el negro es el negativo.
+
+141
+00:16:03,944 --> 00:16:11,534
+El positivo pasa por el interruptor y llega a la placa de distribución, que tiene dos líneas: una positiva y una negativa.
+
+142
+00:16:11,734 --> 00:16:17,205
+De esas dos líneas salen todas las ramas: cada LED con su resistencia, y el motor.
+
+143
+00:16:17,405 --> 00:16:22,137
+Todas van en paralelo: por eso, si un LED falla, los demás siguen prendidos.
+
+144
+00:16:22,337 --> 00:16:27,164
+Es lo mismo que tiene la villa de fábrica; ellos solo usan una placa impresa.
+
+145
+00:16:28,967 --> 00:16:32,993
+Cada LED necesita una resistencia, o se quema en segundos.
+
+146
+00:16:33,193 --> 00:16:38,751
+La fórmula es: voltaje de la fuente, menos voltaje del LED, dividido entre la corriente.
+
+147
+00:16:38,951 --> 00:16:46,572
+Para un LED blanco: 5 menos 3, entre 9 miliamperios, da unos 220 ohmios. Lo mismo para el azul.
+
+148
+00:16:46,772 --> 00:16:54,806
+Para los RGB de cambio lento, usa 100 ohmios, una por cada LED: si dos comparten la misma resistencia, parpadean mal.
+
+149
+00:16:55,006 --> 00:17:01,886
+La resistencia de 220 tiene los colores rojo, rojo, marrón. La de 100: marrón, negro, marrón.
+
+150
+00:17:02,086 --> 00:17:08,456
+Y fíjate en las patas del LED: la larga es la positiva, y el lado plano de la cabeza es el negativo.
+
+151
+00:17:08,656 --> 00:17:17,036
+Si usas 3 pilas AA en vez de USB, cambia las de 220 por 150 ohmios, y las de 100 por 68.
+
+152
+00:17:18,833 --> 00:17:23,546
+Ahora a soldar. Calienta el cautín y limpia la punta en la esponja húmeda.
+
+153
+00:17:23,746 --> 00:17:30,089
+Corta la pata positiva del LED a 1 cm, tuércela con una pata de la resistencia, y suelda.
+
+154
+00:17:30,289 --> 00:17:39,188
+Para soldar: apoya el cautín en la unión 2 segundos, acerca el estaño a la unión, no a la punta, y retira. Debe quedar brillante, como una gota.
+
+155
+00:17:39,388 --> 00:17:45,262
+Al otro extremo de la resistencia suelda un cable rojo, y a la pata negativa un cable negro.
+
+156
+00:17:45,462 --> 00:17:52,265
+Cubre cada unión con termocontraíble y caliéntalo con la secadora o con el costado del cautín, sin tocarlo.
+
+157
+00:17:52,465 --> 00:18:01,535
+Cada LED queda con una cola de cables de 30 cm. Haz los 23 y márcalos con cinta de papel: tudor 1, iglesia 2, y así.
+
+158
+00:18:03,333 --> 00:18:06,372
+Antes de instalar nada, prueba cada LED.
+
+159
+00:18:06,572 --> 00:18:13,912
+Conecta el cable USB al cargador, y toca los cables del LED: rojo con rojo y negro con negro. Debe prender.
+
+160
+00:18:14,112 --> 00:18:21,074
+Si no prende, está al revés o la soldadura está mal. Con el multímetro en modo diodo también ves la polaridad.
+
+161
+00:18:21,274 --> 00:18:25,421
+Prueba también el motor: debe girar suave, sin ruidos raros.
+
+162
+00:18:27,233 --> 00:18:36,699
+Ahora arma la placa de distribución. Corta la placa perforada a 2.5 por 6 cm, rayándola varias veces con el cúter y quebrándola.
+
+163
+00:18:36,899 --> 00:18:42,690
+Suelda dos alambres de punta a punta: uno será la línea positiva y el otro la negativa.
+
+164
+00:18:42,890 --> 00:18:51,262
+Suelda el cable USB: el negro directo a la línea negativa, y el rojo primero al interruptor, y del interruptor a la línea positiva.
+
+165
+00:18:51,462 --> 00:18:58,702
+Antes de conectar, pon el multímetro en continuidad y toca las dos líneas: no debe sonar. Si suena, hay un cortocircuito.
+
+166
+00:18:58,902 --> 00:19:05,850
+Opcional: entre el USB y el interruptor, pon un fusible reseteable de 500 miliamperios como protección.
+
+167
+00:19:06,050 --> 00:19:13,214
+Y haz un nudo en el cable USB por dentro de la base: así, si alguien lo jala, no se arrancan las soldaduras.
+
+168
+00:19:15,000 --> 00:19:21,705
+Paso 12: instalar las luces. Primero coloca las ventanas por dentro de cada casa, en tres capas.
+
+169
+00:19:21,905 --> 00:19:30,825
+Mica transparente, que hace de vidrio; celofán amarillo, que da el tono cálido; y albanene, que esparce la luz para que no se vea el puntito del LED.
+
+170
+00:19:31,025 --> 00:19:39,474
+Pinta el interior de la casa de blanco, para que la luz rebote. Los LEDs de 5 mm van adentro, a 1 cm de las ventanas.
+
+171
+00:19:39,674 --> 00:19:46,741
+Para los foquitos de la fachada, haz agujeros de 3 mm y mete los LEDs desde adentro, con la cabeza asomando.
+
+172
+00:19:46,941 --> 00:19:54,715
+En el piso de cada casa, perfora el foam hasta el canal de abajo, pasa los cables, y pega la casa con silicona en su lugar.
+
+173
+00:19:54,915 --> 00:20:03,058
+El LED azul va escondido bajo el puente, apuntando al río, y los RGB entran en los agujeros del árbol, con los cables por el túnel.
+
+174
+00:20:03,258 --> 00:20:11,979
+Todos los cables llegan por los canales al hueco de la pista. En la placa, suelda cada rojo a la línea positiva y cada negro a la negativa.
+
+175
+00:20:12,179 --> 00:20:19,879
+Prende el interruptor y revisa que todo funcione. Luego pega la placa parada contra la pared del hueco, lejos del motor.
+
+176
+00:20:21,667 --> 00:20:23,618
+Paso 13: la nieve.
+
+177
+00:20:23,818 --> 00:20:32,906
+La receta: 2 cucharadas de bicarbonato, 1 de cola sintética y 1 cucharadita de pintura blanca. Debe quedar como pasta dental espesa.
+
+178
+00:20:33,106 --> 00:20:39,505
+Ponla con la espátula en los techos, el suelo y las rocas, con bordes redondeados, como nieve acumulada.
+
+179
+00:20:39,705 --> 00:20:45,485
+En los aleros, deja que cuelgue un poco: eso hace los bordes chorreados que tiene la original.
+
+180
+00:20:45,685 --> 00:20:57,486
+El borde de la base lleva la nieve más gruesa: masilla con cola, 3 a 1. Pon una franja de 1 cm y jala con el dedo hacia abajo cada 2 o 3 cm, para formar las gotas.
+
+181
+00:20:57,686 --> 00:21:03,948
+Mientras todo está húmedo, espolvorea la escarcha iridiscente, y deja secar 24 horas.
+
+182
+00:21:04,148 --> 00:21:11,103
+Para carámbanos transparentes, deja caer gotas de silicona desde los aleros, jalando la pistola hacia abajo.
+
+183
+00:21:12,900 --> 00:21:15,320
+Paso 14: el agua del río.
+
+184
+00:21:15,520 --> 00:21:22,244
+Pinta la canaleta de azul oscuro en los bordes y azul claro al centro, con unas líneas blancas, como espuma.
+
+185
+00:21:22,444 --> 00:21:30,229
+Encima, pon tiras de silicona transparente siguiendo la corriente, y caliéntalas con la secadora para que parezca agua que corre.
+
+186
+00:21:30,429 --> 00:21:37,548
+Termina con 2 manos de barniz brillante. Con el LED azul debajo del puente, el río brilla igual que en la original.
+
+187
+00:21:39,333 --> 00:21:41,838
+Paso 15: el montaje final.
+
+188
+00:21:42,038 --> 00:21:48,398
+Clava los pinos con su palito y una gota de silicona: los grandes atrás y los pequeños adelante.
+
+189
+00:21:48,598 --> 00:21:54,591
+Pega el árbol de Navidad, el muñeco de nieve en la esquina de la panadería, y el niño en el nivel de atrás.
+
+190
+00:21:54,791 --> 00:22:01,068
+Pon la pista: presiona la rueda en el eje hasta el fondo, y gírala con la mano para ver que no roce.
+
+191
+00:22:01,268 --> 00:22:05,778
+Debajo de la base pega una lámina de fieltro y cuatro patitas de goma.
+
+192
+00:22:05,978 --> 00:22:10,813
+Y al final, retoca con nieve y escarcha cualquier unión o cable que se vea.
+
+193
+00:22:12,600 --> 00:22:19,271
+Paso 16: pruebas. Conecta el cargador, prende el interruptor y deja la villa funcionando una hora.
+
+194
+00:22:19,471 --> 00:22:23,740
+Si un solo LED no prende, revisa su polaridad y su soldadura.
+
+195
+00:22:23,940 --> 00:22:31,301
+Si no prende ninguno, mide con el multímetro si llegan 5 V a la placa: puede ser el interruptor o el cable.
+
+196
+00:22:31,501 --> 00:22:36,904
+Si en una ventana se ve el puntito de luz, agrega otra capa de albanene o aleja el LED.
+
+197
+00:22:37,104 --> 00:22:43,021
+Si la pista se traba o hace ruido, está rozando: centra el disco o lija el borde del hueco.
+
+198
+00:22:43,221 --> 00:22:49,101
+Y si el cargador se calienta, desconéctalo: hay un corto. Revisa todo con el multímetro.
+
+199
+00:22:50,900 --> 00:22:56,048
+Etapa B: copias en polirresina, como la fábrica. Esta parte es opcional.
+
+200
+00:22:56,248 --> 00:23:05,137
+La idea: tu pieza sellada es el modelo original. Le haces un molde de silicona, y en ese molde vacías polirresina todas las veces que quieras.
+
+201
+00:23:05,337 --> 00:23:13,987
+La fábrica no moldea todo de una vez: hace moldes por partes. La base, cada bloque de casas, los árboles y las figuras van por separado.
+
+202
+00:23:14,187 --> 00:23:19,863
+Y las piezas con salientes, como los toldos, también se cuelan aparte y se pegan después.
+
+203
+00:23:21,667 --> 00:23:29,058
+Para el molde necesitas caucho de silicona para moldes con su catalizador, una balanza, vasos, palitos y plastilina.
+
+204
+00:23:29,258 --> 00:23:38,136
+Pega la pieza sobre una tabla con plastilina, sellando todo el borde, y arma alrededor una caja de cartón pluma, con 1 cm de espacio.
+
+205
+00:23:38,336 --> 00:23:47,544
+Pesa la silicona y agrega el catalizador que indica el envase, normalmente entre 2 y 5 por ciento. Mezcla 2 minutos, raspando el vaso.
+
+206
+00:23:47,744 --> 00:23:54,043
+Primero pasa una capa fina con pincel sobre la pieza, para que no queden burbujas en los detalles.
+
+207
+00:23:54,243 --> 00:24:02,308
+Luego vierte el resto en un hilo delgado, desde unos 30 cm de alto, en una esquina de la caja. Así salen las burbujas.
+
+208
+00:24:02,508 --> 00:24:10,080
+Deja curar 24 horas, desarma la caja y saca la pieza con cuidado. Ese molde sirve para muchas copias.
+
+209
+00:24:11,867 --> 00:24:19,412
+Ahora la polirresina: resina poliéster preacelerada, carbonato de calcio, y el catalizador, que se llama MEKP.
+
+210
+00:24:19,612 --> 00:24:26,068
+Pesa la resina y agrega el mismo peso de carbonato de calcio. Mezcla hasta que no quede ningún grumo.
+
+211
+00:24:26,268 --> 00:24:34,963
+Agrega el catalizador: entre 1 y 2 por ciento del peso de la resina, más o menos 1 ml por cada 100 gramos. Mezcla 1 minuto.
+
+212
+00:24:35,163 --> 00:24:40,301
+Tienes unos 10 a 15 minutos antes de que endurezca, y menos si hace calor.
+
+213
+00:24:40,501 --> 00:24:47,912
+Las casas deben salir huecas: llena un tercio del molde y gíralo despacio en todas direcciones para cubrir las paredes.
+
+214
+00:24:48,112 --> 00:24:57,097
+Bota el sobrante y repite 2 o 3 veces, hasta tener 3 a 4 mm de grosor. Los árboles y las figuras se llenan completos.
+
+215
+00:24:57,297 --> 00:25:07,641
+Desmolda en 1 o 2 horas, cuando esté dura y fría. Lija los bordes, abre las ventanas con el minitaladro, y desde ahí se pinta y se ilumina igual que en la etapa A.
+
+216
+00:25:09,433 --> 00:25:11,735
+Muy importante con la resina.
+
+217
+00:25:11,935 --> 00:25:19,909
+Sus vapores son tóxicos: trabaja al aire libre o con mucha ventilación, y con respirador de filtros para vapores orgánicos.
+
+218
+00:25:20,109 --> 00:25:26,196
+El catalizador es corrosivo, sobre todo para los ojos: usa siempre lentes y guantes de nitrilo.
+
+219
+00:25:26,396 --> 00:25:36,160
+Nunca mezcles el catalizador directamente con acelerador de cobalto, porque reaccionan con violencia. Por eso conviene comprar la resina ya preacelerada.
+
+220
+00:25:36,360 --> 00:25:41,861
+Y no botes resina líquida: deja que endurezca en el vaso y después tírala a la basura.
+
+221
+00:25:43,667 --> 00:25:52,608
+Y eso es todo. Repasemos: base y terreno, casas con texturas, árboles y figuras, sellado, pintura, motor, luces, nieve y montaje.
+
+222
+00:25:52,808 --> 00:25:59,871
+La lista de materiales, las medidas y el circuito están en la guía escrita, en el mismo repositorio que este video.
+
+223
+00:26:00,071 --> 00:26:03,971
+Si haces tu villa, me encantaría verla. ¡Feliz Navidad!
